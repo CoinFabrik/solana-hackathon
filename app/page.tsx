@@ -75,14 +75,6 @@ var default_toolbox = {
   contents: [
     {
       kind: "block",
-      type: "test_react_date_field",
-    },
-    {
-      kind: "block",
-      type: "test_react_field",
-    },
-    {
-      kind: "block",
       type: "controls_if",
     },
     {
@@ -131,16 +123,16 @@ const MainComponentWithSidebar = () => {
           previousStatement: null,
           nextStatement: null,
         };
-        Blockly.Blocks[instruction.name] = {
+        /*Blockly.Blocks[instruction.name] = {
           init: function () {
             this.jsonInit(block);
             this.setStyle("loop_blocks");
           },
-        };
-
+        };*/
         return block;
       });
 
+      Blockly.defineBlocksWithJsonArray(blocks)
       let extendedToolbox = default_toolbox;
 
       extendedToolbox.contents = extendedToolbox.contents.concat(blocks);
@@ -185,7 +177,7 @@ const MainComponentWithSidebar = () => {
               <xml xmlns="http://www.w3.org/1999/xhtml">
               <block type="controls_ifelse" x="0" y="0"></block>
               </xml>`}
-              toolbox={default_toolbox}
+              toolbox={toolbox}
             />
           </div>
           {/* sidebar */}
@@ -202,6 +194,7 @@ const MainComponentWithSidebar = () => {
                   <NavigationMenuItem>
                     <NavigationMenuTrigger>Accounts</NavigationMenuTrigger>
                     <NavigationMenuContent>
+                      {JSON.stringify(toolbox)}
                       <ArrayManipulator></ArrayManipulator>
                     </NavigationMenuContent>
                   </NavigationMenuItem>

@@ -44,6 +44,7 @@ function BlocklyComponent(props: any) {
   useEffect(() => {
     const { initialXml, children, ...rest } = props;
     if (primaryWorkspace.current === null) {
+      console.log("primaryWorkspace.current === null")
       primaryWorkspace.current = Blockly.inject(blocklyDiv.current, {
         ...rest,
       });
@@ -54,12 +55,11 @@ function BlocklyComponent(props: any) {
           primaryWorkspace.current
         );
       }
-    } else {
-        console.log("render")
-        Blockly.defineBlocksWithJsonArray()
-      let a = primaryWorkspace.current as Blockly.WorkspaceSvg;
-      let toolbox = a.getToolbox();
-      toolbox?.render(props.toolbox);
+    }
+    console.log("render")
+    if(props.toolbox) { 
+      console.log(props.toolbox)
+      primaryWorkspace.current.updateToolbox(props.toolbox)
     }
   }, [primaryWorkspace, blocklyDiv, props]);
 
