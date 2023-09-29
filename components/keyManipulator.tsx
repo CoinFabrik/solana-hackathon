@@ -7,7 +7,7 @@ import { Plus, X } from "lucide-react";
 import { KeyManagerContext, KeyManagerProvider} from "@/services/keysManager";
 import { PublicKey } from "@solana/web3.js";
 
-const AccountManipulator = () => {
+const KeyManipulator = () => {
   const keyManager = useContext(KeyManagerContext);
   const [name, setName] = useState("");
 
@@ -59,4 +59,4 @@ const AccountManipulator = () => {
   );
 };
   
-export default AccountManipulator;
+export default KeyManipulator;

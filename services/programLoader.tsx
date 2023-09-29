@@ -64,6 +64,7 @@ class ProgramsManager {
   }
   removeProgram(address: PublicKey) {
     const arr = this.programs.filter((v)=>v.address != address);
+    this.setList(arr);
     localStorage.setItem("ProgramsManager", JSON.stringify(arr))
   }
 }
