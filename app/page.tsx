@@ -1,5 +1,5 @@
 'use client'
-import ArrayManipulator from '@/components/arrayManipulator'
+import AccountManipulator from '@/components/accountManipulator'
 import Image from 'next/image'
 import React, { useState } from 'react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -20,7 +20,13 @@ import {
 } from '@/components/ui/popover';
 import BlocklyComponent from '@/components/Blockly/BlocklyComponent';
 import * as Blockly from 'blockly/core';
-
+import { Split } from '@geoffcox/react-splitter';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SourceCode from '@/components/SourceCodeViewer/sourceCode';
+import SideBar from '@/components/sideBar';
+import { AccountsManagerProvider } from '@/services/accountsManager'
+import { KeyManagerProvider } from '@/services/keysManager'
+import { ProgramsManagerProvider } from '@/services/programLoader';
 
 let reactDateField = {
         "type": "test_react_date_field",
@@ -106,25 +112,21 @@ const toolbox = {
   ]
 }
  
-const MainComponentWithSidebar = () => {
-  const [sidebarVisible, setSidebarVisible] = useState(true);
-
+const MainComponent = () => {
+  const [size, setSize] = useState('70%');
+  const [sourceCode, setSourceCode] = useState('');
   return (
+    <AccountsManagerProvider>
+    <KeyManagerProvider>
+    <ProgramsManagerProvider>
     <main>
       <div className="h-screen flex flex-col">
         {/* navbar */}
         <div className="flex-initial flex justify-between items-center border-b p-4">
           <span className="text-lg font-bold">Navbar</span>
           {/* sidebar visibility toggle */}
-          <button onClick={() => setSidebarVisible(!sidebarVisible)}>
-            Toggle Sidebar
-          </button>
         </div>
-
-        {/* content area */}
-        <div className="flex flex-auto">
-          {/* main content area */}
-          <div className="flex flex-auto flex-col">
+        <Split initialPrimarySize='70%' onSplitChanged={setSize}>
           <BlocklyComponent readOnly={false}
             trashcan={true} media={'media/'}
             move={{
@@ -132,37 +134,41 @@ const MainComponentWithSidebar = () => {
               drag: true,
               wheel: true
             }}
-
+            onSourceChange={setSourceCode}
+            size={size}
             initialXml={`
               <xml xmlns="http://www.w3.org/1999/xhtml">
               <block type="controls_ifelse" x="0" y="0"></block>
               </xml>`}
             toolbox={toolbox}
           />
+          <div>
+            <Tabs defaultValue="accounts">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="accounts">
+                  Accounts
+                </TabsTrigger>
+                <TabsTrigger value="code">
+                  Code
+                </TabsTrigger>
+              </TabsList>  
+              <TabsContent value="accounts">
+                <SideBar/>
+              </TabsContent>
+              <TabsContent value="code">
+                <SourceCode source={sourceCode}/>
+              </TabsContent>
+            </Tabs>
           </div>
-          {/* sidebar */}
-          {sidebarVisible && (
-            <div>
-              <Popover>
-                <PopoverTrigger>Open Popover</PopoverTrigger>
-                <PopoverContent>Place content for the popover here.</PopoverContent>
-              </Popover>
-              <NavigationMenu>
-                <NavigationMenuList>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger>Accounts</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ArrayManipulator></ArrayManipulator>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu>
-            </div>
-          )}
-        </div>
+        </Split>
+        {/* content area */}
+        
       </div>
     </main>
+    </ProgramsManagerProvider>
+    </KeyManagerProvider>
+    </AccountsManagerProvider>
   );
 }
 
-export default MainComponentWithSidebar;
+export default MainComponent;

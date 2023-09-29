@@ -32,16 +32,9 @@
 
  Blockly.setLocale(locale);
 
- function BlocklyComponent(props) {
+ function BlocklyComponent({size, onSourceChange, ...props}) {
     const blocklyDiv = useRef();
     let primaryWorkspace = useRef(null);
-
-    const generateCode = () => {
-        var code = javascriptGenerator.workspaceToCode(
-          primaryWorkspace.current
-        );
-        console.log(code);
-    }
 
     useEffect(() => {
         const { initialXml, children, ...rest } = props;
@@ -52,12 +45,22 @@
                     ...rest
                 },
             );
-    
             if (initialXml) {
                 Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(initialXml), primaryWorkspace.current);
             }
+            primaryWorkspace.current.addChangeListener(() => {
+                if (Blockly.getMainWorkspace().isDragging()) {
+                    return;  // Don't update code mid-drag.
+                }
+                var code = javascriptGenerator.workspaceToCode(
+                  primaryWorkspace.current
+                );
+                onSourceChange(code);
+            });
+        } else {
+            Blockly.svgResize(primaryWorkspace.current)
         }
-    }, [primaryWorkspace, blocklyDiv, props]);
+    }, [primaryWorkspace, blocklyDiv, props, size, onSourceChange]);
 
     return (
     <React.Fragment>
@@ -65,6 +68,6 @@
     </React.Fragment>);
 }
 
-const MemoBlocklyComponent = React.memo(BlocklyComponent, ()=>true);
+//const MemoBlocklyComponent = React.memo(BlocklyComponent, ()=>true);
 
-export default MemoBlocklyComponent;
+export default BlocklyComponent;
