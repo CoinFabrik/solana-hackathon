@@ -26,7 +26,7 @@ const ProgramsManipulator = () => {
   };
 
   const handleRemove = (pubkey: PublicKey) => {
-    programsManager?.removeProgram(pubkey)
+    programsManager?.removeProgram(pubkey);
   };
 
   return (
