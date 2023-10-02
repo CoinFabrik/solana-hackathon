@@ -35,7 +35,7 @@ class KeyManager {
   }
 }
 
-const KeyManagerContext = createContext(null as KeyManager|null);
+const KeyManagerContext = createContext({} as KeyManager);
 
 const KeyManagerProvider = (props: any) => {
   const json = localStorage.getItem("KeyManager");

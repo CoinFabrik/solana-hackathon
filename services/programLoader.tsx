@@ -69,7 +69,7 @@ class ProgramsManager {
   }
 }
 
-const ProgramsManagerContext = createContext(null as ProgramsManager|null);
+const ProgramsManagerContext = createContext({} as ProgramsManager);
 
 const ProgramsManagerProvider = (props: any) => {
   const json = localStorage.getItem("ProgramsManager");

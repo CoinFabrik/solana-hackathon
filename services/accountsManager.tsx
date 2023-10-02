@@ -29,7 +29,7 @@ class AccountsManager {
   }
 }
 
-const AccountsManagerContext = createContext(null as AccountsManager|null);
+const AccountsManagerContext = createContext({} as AccountsManager);
 
 const AccountsManagerProvider = (props: any) => {
   const json = localStorage.getItem("AccountsManager");

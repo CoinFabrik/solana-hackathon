@@ -21,26 +21,49 @@
  * @author samelh@google.com (Sam El-Husseini)
  */
 
-import React, { useContext } from "react";
+import React, { MutableRefObject, useContext } from "react";
 import "./BlocklyComponent.css";
 import { useEffect, useRef } from "react";
 
-import Blockly from "blockly/core";
+import Blockly, { MenuOption } from "blockly/core";
 import { javascriptGenerator } from "blockly/javascript";
 import locale from "blockly/msg/en";
 import "blockly/blocks";
 import { ProgramsManagerContext } from "@/services/programLoader";
+import { AccountsManagerContext } from "@/services/accountsManager";
 
 Blockly.setLocale(locale);
 
-function BlocklyComponent({ size, onSourceChange, ...props }) {
+function BlocklyComponent({ size, onSourceChange, ...props }:{size:any, onSourceChange:any, props:any}) {
   const blocklyDiv = useRef();
-  let primaryWorkspace = useRef(null);
+  let primaryWorkspace: MutableRefObject<Blockly.WorkspaceSvg|null> = useRef(null);
 
   const programsManager = useContext(ProgramsManagerContext);
+  const accountsManager = useContext(AccountsManagerContext);
+
+  useEffect(() => {
+    const dropdownArr = accountsManager?.accounts.map(
+        (account)=>[account.name, account.address.toBase58()] as MenuOption
+    )
+    if(dropdownArr){
+      Blockly.Blocks['input_account'] = {
+          init: function() {
+              this.appendDummyInput()
+                  .appendField(new Blockly.FieldDropdown(dropdownArr), "account");
+              this.setInputsInline(false);
+              this.setOutput(true, "String");
+              this.setColour(230);
+              this.setTooltip("");
+              this.setHelpUrl("");
+          }
+      };
+      let toolbox = primaryWorkspace?.current?.getToolbox();
+      primaryWorkspace?.current?.updateToolbox();
+    }
+  }, [accountsManager.accounts]);
   useEffect(() => {
     console.log("programsManager.programs", programsManager.programs);
-    console.log(primaryWorkspace?.current?.getRenderer().getConstants());
+    console.log("BLOCKLY", Blockly, "javascriptGenerator", javascriptGenerator);
   }, [programsManager.programs]);
   useEffect(() => {
     /* 
