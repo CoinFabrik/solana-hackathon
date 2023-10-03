@@ -27,6 +27,7 @@ import SideBar from "@/components/sideBar";
 import { AccountsManagerProvider } from "@/services/accountsManager";
 import { KeyManagerProvider } from "@/services/keysManager";
 import { ProgramsManagerProvider } from "@/services/programLoader";
+import toolbox from "@/components/Blockly/defaultToolbox.json"
 
 let reactDateField = {
   type: "test_react_date_field",
@@ -110,29 +111,6 @@ Blockly.Blocks["setupGame"] = {
     this.jsonInit(setupGame);
     this.setStyle("procedure_blocks");
   },
-};
-
-const toolbox = {
-  kind: "flyoutToolbox",
-  contents: [
-    {
-      kind: "block",
-      type: "test_react_date_field",
-    },
-    {
-      kind: "block",
-      type: "test_react_field",
-    },
-    {
-      kind: "block",
-      type: "setupGame",
-    },
-
-    {
-      kind: "block",
-      type: "text",
-    },
-  ],
 };
 
 const MainComponent = () => {

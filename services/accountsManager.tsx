@@ -33,7 +33,10 @@ const AccountsManagerContext = createContext({} as AccountsManager);
 
 const AccountsManagerProvider = (props: any) => {
   const json = localStorage.getItem("AccountsManager");
-  const [list, setList] = useState<Array<AccountName>>(json?JSON.parse(json):[]);
+  const [list, setList] = useState<Array<AccountName>>(
+    json?JSON.parse(json,(key, value)=>key==="address"?new PublicKey(value):value)
+    :[]
+  );
 
   return (
     <AccountsManagerContext.Provider value={new AccountsManager(list, setList)}>

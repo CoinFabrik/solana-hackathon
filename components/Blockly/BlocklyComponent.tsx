@@ -21,12 +21,11 @@
  * @author samelh@google.com (Sam El-Husseini)
  */
 
-import React, { MutableRefObject, useContext } from "react";
+import React, { MutableRefObject, useContext, useState } from "react";
 import "./BlocklyComponent.css";
 import { useEffect, useRef } from "react";
-
 import Blockly, { MenuOption } from "blockly/core";
-import { javascriptGenerator } from "blockly/javascript";
+import javascript, { javascriptGenerator } from "blockly/javascript";
 import locale from "blockly/msg/en";
 import "blockly/blocks";
 import { ProgramsManagerContext } from "@/services/programLoader";
@@ -34,18 +33,25 @@ import { AccountsManagerContext } from "@/services/accountsManager";
 
 Blockly.setLocale(locale);
 
-function BlocklyComponent({ size, onSourceChange, ...props }:{size:any, onSourceChange:any, props:any}) {
-  const blocklyDiv = useRef();
+function BlocklyComponent({ size, onSourceChange, toolbox, ...props }:{size:any, onSourceChange:any, toolbox:any}&Record<string,any>) {
+  const blocklyDiv: MutableRefObject<HTMLDivElement> = useRef({} as HTMLDivElement);
   let primaryWorkspace: MutableRefObject<Blockly.WorkspaceSvg|null> = useRef(null);
+  const currentAccounts = useRef([] as any[]);
 
   const programsManager = useContext(ProgramsManagerContext);
   const accountsManager = useContext(AccountsManagerContext);
 
+
   useEffect(() => {
-    const dropdownArr = accountsManager?.accounts.map(
+    currentAccounts.current = accountsManager?.accounts;
+    const dropdownArr = ()=>{
+      
+      console.log("accountsManager?.accounts", currentAccounts.current)
+      return currentAccounts.current.map(
         (account)=>[account.name, account.address.toBase58()] as MenuOption
-    )
-    if(dropdownArr){
+      )
+    }
+    if(accountsManager?.accounts && accountsManager?.accounts.length){
       Blockly.Blocks['input_account'] = {
           init: function() {
               this.appendDummyInput()
@@ -57,16 +63,33 @@ function BlocklyComponent({ size, onSourceChange, ...props }:{size:any, onSource
               this.setHelpUrl("");
           }
       };
-      let toolbox = primaryWorkspace?.current?.getToolbox();
-      primaryWorkspace?.current?.updateToolbox();
+      javascriptGenerator.forBlock['input_account'] = function(block: Blockly.Block, generator: any) {
+        var dropdown_options = block.getFieldValue('account');
+        // TODO: Assemble javascript into code variable.
+        var code = 'Account:'+dropdown_options;
+        // TODO: Change ORDER_NONE to the correct strength.
+        return [code, javascript.Order.NONE];
+      };
+      const {...custom_toolbox} = toolbox;
+      custom_toolbox.contents = [...custom_toolbox.contents, {
+        "kind": "category",
+        "name": "Accounts",
+        "colour": "#5b67a5",
+        "contents": [
+          {
+            "kind": "block",
+            "type": "input_account"
+          },
+        ]
+      }];
+      primaryWorkspace?.current?.updateToolbox(custom_toolbox);
     }
   }, [accountsManager.accounts]);
   useEffect(() => {
     console.log("programsManager.programs", programsManager.programs);
     console.log("BLOCKLY", Blockly, "javascriptGenerator", javascriptGenerator);
   }, [programsManager.programs]);
-  useEffect(() => {
-    /* 
+/*  useEffect(() => {
       "instructions": [
     {
       "name": "setupGame",
@@ -92,7 +115,7 @@ function BlocklyComponent({ size, onSourceChange, ...props }:{size:any, onSource
           "name": "playerTwo",
           "type": "publicKey"
         }
-      ] */
+      ] 
     programsManager.programs
       .filter(
         (program) =>
@@ -119,19 +142,20 @@ function BlocklyComponent({ size, onSourceChange, ...props }:{size:any, onSource
           };
         });
         Blockly.defineBlocksWithJsonArray(blocks);
-        let extendedToolbox = props.toolbox;
+        let extendedToolbox = toolbox;
         extendedToolbox.contents = extendedToolbox.contents.concat(blocks);
-        primaryWorkspace?.current?.updateToolbox(props.toolbox);
+        primaryWorkspace?.current?.updateToolbox(toolbox);
       });
   }, [
     programsManager.programs,
     programsManager.networkInfo.selectedNetwork,
-    props.toolbox,
-  ]);
+    toolbox,
+  ]);*/
   useEffect(() => {
     const { initialXml, children, ...rest } = props;
     if (primaryWorkspace.current === null) {
       primaryWorkspace.current = Blockly.inject(blocklyDiv.current, {
+        toolbox,
         ...rest,
       });
       if (initialXml) {
@@ -141,7 +165,7 @@ function BlocklyComponent({ size, onSourceChange, ...props }:{size:any, onSource
         );
       }
       primaryWorkspace.current.addChangeListener(() => {
-        if (Blockly.getMainWorkspace().isDragging()) {
+        if (primaryWorkspace?.current?.isDragging()) {
           return; // Don't update code mid-drag.
         }
         var code = javascriptGenerator.workspaceToCode(

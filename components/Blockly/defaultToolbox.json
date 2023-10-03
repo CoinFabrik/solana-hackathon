@@ -1,0 +1,76 @@
+{
+  "kind": "categoryToolbox",
+  "contents": [
+    {
+      "kind": "category",
+      "name": "Logic",
+      "colour": "#5b80a5",
+      "contents": [
+        {
+          "kind": "block",
+          "type": "logic_compare"
+        },
+        {
+          "kind": "block",
+          "type": "logic_operation"
+        },
+        {
+          "kind": "block",
+          "type": "logic_boolean"
+        }
+      ]
+    },
+    {
+      "kind": "category",
+      "name": "Loops",
+      "colour": "#5ba55b",
+      "contents": [
+        {
+          "kind": "block",
+          "type": "controls_repeat_ext"
+        },
+        {
+          "kind": "block",
+          "type": "controls_whileUntil"
+        },
+        {
+          "kind": "block",
+          "type": "controls_for"
+        },
+        {
+          "kind": "block",
+          "type": "controls_for"
+        }
+      ]
+    },
+    {
+      "kind": "category",
+      "name": "Math",
+      "colour": "#5b67a5",
+      "contents": [
+        {
+          "kind": "block",
+          "type": "math_number"
+        },
+        {
+          "kind": "block",
+          "type": "math_arithmetic"
+        },
+        {
+          "kind": "block",
+          "type": "math_single"
+        },
+        {
+          "kind": "block",
+          "type": "math_round"
+        }
+      ]
+    },
+    {
+      "kind": "category",
+      "name": "Variables",
+      "colour": "#a55b80",
+      "custom": "VARIABLE"
+    }
+  ]
+}
