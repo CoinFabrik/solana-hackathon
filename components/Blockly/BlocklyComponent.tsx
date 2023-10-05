@@ -37,9 +37,21 @@ import { ToolboxManager } from "./ToolBoxManager";
 
 Blockly.setLocale(locale);
 
-function BlocklyComponent({ size, onSourceChange, toolbox, ...props }:{size:any, onSourceChange:any, toolbox:ToolboxInfo}&Record<string,any>) {
-  const blocklyDiv: MutableRefObject<HTMLDivElement> = useRef({} as HTMLDivElement);
-  let primaryWorkspace: MutableRefObject<Blockly.WorkspaceSvg> = useRef({} as WorkspaceSvg);
+function BlocklyComponent({
+  size,
+  onSourceChange,
+  toolbox,
+  ...props
+}: { size: any; onSourceChange: any; toolbox: ToolboxInfo } & Record<
+  string,
+  any
+>) {
+  const blocklyDiv: MutableRefObject<HTMLDivElement> = useRef(
+    {} as HTMLDivElement
+  );
+  let primaryWorkspace: MutableRefObject<Blockly.WorkspaceSvg> = useRef(
+    {} as WorkspaceSvg
+  );
   const currentAccounts = useRef([] as any[]);
 
   const currentEnumTypes = useRef([] as any[]);
@@ -49,15 +61,18 @@ function BlocklyComponent({ size, onSourceChange, toolbox, ...props }:{size:any,
   const accountsManager = useContext(AccountsManagerContext);
   const keyManager = useContext(KeyManagerContext);
 
-  const toolboxManager = useRef(new ToolboxManager(
-    primaryWorkspace,
-    toolbox,
-    accountsManager.accounts,
-    keyManager.keys,
-    programsManager.programs
-  ));
+  const toolboxManager = useRef(
+    new ToolboxManager(
+      primaryWorkspace,
+      toolbox,
+      accountsManager.accounts,
+      keyManager.keys,
+      programsManager.programs
+    )
+  );
 
   useEffect(() => {
+
     const { initialXml, children, ...rest } = props;
     if (Object.keys(primaryWorkspace.current).length == 0) {
       primaryWorkspace.current = Blockly.inject(blocklyDiv.current, {
@@ -79,18 +94,25 @@ function BlocklyComponent({ size, onSourceChange, toolbox, ...props }:{size:any,
         );
         onSourceChange(code);
       });
+
+      // Saving workspace state
+      const state = Blockly.serialization.workspaces.save(
+        primaryWorkspace.current
+      );
+
+      localStorage.setItem("PrimaryWorkspace", JSON.stringify(state));
     }
   }, [primaryWorkspace, blocklyDiv, props, onSourceChange, toolbox]);
   useEffect(() => {
-    console.log("SETPROGRAMS")
-    toolboxManager.current.setPrograms(programsManager.programs)
+    console.log("SETPROGRAMS");
+    toolboxManager.current.setPrograms(programsManager.programs);
   }, [programsManager.programs, toolbox]);
   useEffect(() => {
-    console.log("SETACCOUNTS")
-    toolboxManager.current.setAccounts(accountsManager.accounts)
+    console.log("SETACCOUNTS");
+    toolboxManager.current.setAccounts(accountsManager.accounts);
   }, [accountsManager.accounts, toolboxManager]);
   useEffect(() => {
-    toolboxManager.current.setSigners(keyManager.keys)
+    toolboxManager.current.setSigners(keyManager.keys);
   }, [keyManager.keys, toolboxManager]);
   useEffect(() => {
     console.log("programsManager.programs", programsManager.programs);
@@ -100,7 +122,7 @@ function BlocklyComponent({ size, onSourceChange, toolbox, ...props }:{size:any,
     if (Object.keys(primaryWorkspace.current).length != 0) {
       Blockly.svgResize(primaryWorkspace.current);
     }
-  }, [size])
+  }, [size]);
 
   return (
     <React.Fragment>
