@@ -72,19 +72,23 @@ function BlocklyComponent({
   );
 
   useEffect(() => {
-
     const { initialXml, children, ...rest } = props;
     if (Object.keys(primaryWorkspace.current).length == 0) {
       primaryWorkspace.current = Blockly.inject(blocklyDiv.current, {
         toolbox,
         ...rest,
       });
-      if (initialXml) {
-        Blockly.Xml.domToWorkspace(
-          Blockly.utils.xml.textToDom(initialXml),
+      const storage = localStorage.getItem("PrimaryWorkspace");
+      if (storage) {
+        toolboxManager.current.setPrograms(programsManager.programs);
+        toolboxManager.current.setAccounts(accountsManager.accounts);
+        toolboxManager.current.setSigners(keyManager.keys);
+        Blockly.serialization.workspaces.load(
+          JSON.parse(storage),
           primaryWorkspace.current
         );
       }
+
       primaryWorkspace.current.addChangeListener(() => {
         if (primaryWorkspace?.current?.isDragging()) {
           return; // Don't update code mid-drag.
@@ -93,16 +97,23 @@ function BlocklyComponent({
           primaryWorkspace.current
         );
         onSourceChange(code);
+        // Saving workspace state
+        const state = Blockly.serialization.workspaces.save(
+          primaryWorkspace.current
+        );
+        localStorage.setItem("PrimaryWorkspace", JSON.stringify(state));
       });
-
-      // Saving workspace state
-      const state = Blockly.serialization.workspaces.save(
-        primaryWorkspace.current
-      );
-
-      localStorage.setItem("PrimaryWorkspace", JSON.stringify(state));
     }
-  }, [primaryWorkspace, blocklyDiv, props, onSourceChange, toolbox]);
+  }, [
+    primaryWorkspace,
+    blocklyDiv,
+    props,
+    onSourceChange,
+    toolbox,
+    programsManager.programs,
+    accountsManager.accounts,
+    keyManager.keys,
+  ]);
   useEffect(() => {
     console.log("SETPROGRAMS");
     toolboxManager.current.setPrograms(programsManager.programs);
