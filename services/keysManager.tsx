@@ -13,25 +13,29 @@ class KeyManager {
     this.keys = list;
     this.setList = setList;
   }
-  newKey(name: string|undefined) {
+  newKey(name: string|undefined): boolean {
     let keypair = Keypair.generate();
-    this.addKey(
+    return this.addKey(
       name?name:keypair.publicKey.toBase58(),
       keypair
     );
   }
-  addKey(name: string, keypair: Keypair) {
+  addKey(name: string, keypair: Keypair): boolean {
+    if(this.keys.some((v)=>v.name==name)){
+      return false
+    }
     const arr = [...this.keys, {
       keypair,
       name
     }];
     this.setList(arr);
-    localStorage.setItem("KeyManager", JSON.stringify(arr))
+    localStorage.setItem("KeyManager", JSON.stringify(arr, (key, value)=>key==="keypair"?value.secretKey.toString():value))
+    return true;
   }
   removeKey(name: string) {
     const arr = this.keys.filter((v)=>v.name != name);
     this.setList(arr);
-    localStorage.setItem("KeyManager", JSON.stringify(arr))
+    localStorage.setItem("KeyManager", JSON.stringify(arr, (key, value)=>key==="keypair"?value.secretKey.toString():value))
   }
 }
 
@@ -39,7 +43,10 @@ const KeyManagerContext = createContext({} as KeyManager);
 
 const KeyManagerProvider = (props: any) => {
   const json = localStorage.getItem("KeyManager");
-  const [list, setList] = useState<Array<KeypairName>>(json?JSON.parse(json):[]);
+  const [list, setList] = useState<Array<KeypairName>>(
+    json?JSON.parse(json,(key, value)=>key==="keypair"?Keypair.fromSecretKey(new Uint8Array(value.split(','))):value)
+    :[]
+  );
 
   return (
     <KeyManagerContext.Provider value={new KeyManager(list, setList)}>
@@ -48,4 +55,5 @@ const KeyManagerProvider = (props: any) => {
   )
 };
 
-export {KeyManagerContext, KeyManagerProvider};
+export { KeyManagerContext, KeyManagerProvider };
+export type { KeypairName };

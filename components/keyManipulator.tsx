@@ -12,8 +12,9 @@ const KeyManipulator = () => {
   const [name, setName] = useState("");
 
   const handleAdd = () => {
-    keyManager?.newKey(name);
-    setName("");
+    if(keyManager?.newKey(name)){
+      setName("");
+    }
   };
 
   const handleRemove = (name: string) => {

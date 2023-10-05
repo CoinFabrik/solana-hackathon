@@ -24,27 +24,22 @@
 import React, { MutableRefObject, useContext, useState } from "react";
 import "./BlocklyComponent.css";
 import { useEffect, useRef } from "react";
-import Blockly, { MenuOption } from "blockly/core";
+import Blockly, { MenuOption, WorkspaceSvg } from "blockly/core";
 import javascript, { javascriptGenerator } from "blockly/javascript";
 import locale from "blockly/msg/en";
 import "blockly/blocks";
 import { ProgramsManagerContext } from "@/services/programLoader";
 import { AccountsManagerContext } from "@/services/accountsManager";
 import { IdlTypeDef } from "@coral-xyz/anchor/dist/cjs/idl";
+import { KeyManagerContext } from "@/services/keysManager";
+import { ToolboxInfo } from "blockly/core/utils/toolbox";
+import { ToolboxManager } from "./ToolBoxManager";
 
 Blockly.setLocale(locale);
 
-function BlocklyComponent({
-  size,
-  onSourceChange,
-  toolbox,
-  ...props
-}: { size: any; onSourceChange: any; toolbox: any } & Record<string, any>) {
-  const blocklyDiv: MutableRefObject<HTMLDivElement> = useRef(
-    {} as HTMLDivElement
-  );
-  let primaryWorkspace: MutableRefObject<Blockly.WorkspaceSvg | null> =
-    useRef(null);
+function BlocklyComponent({ size, onSourceChange, toolbox, ...props }:{size:any, onSourceChange:any, toolbox:ToolboxInfo}&Record<string,any>) {
+  const blocklyDiv: MutableRefObject<HTMLDivElement> = useRef({} as HTMLDivElement);
+  let primaryWorkspace: MutableRefObject<Blockly.WorkspaceSvg> = useRef({} as WorkspaceSvg);
   const currentAccounts = useRef([] as any[]);
 
   const currentEnumTypes = useRef([] as any[]);
@@ -52,125 +47,19 @@ function BlocklyComponent({
 
   const programsManager = useContext(ProgramsManagerContext);
   const accountsManager = useContext(AccountsManagerContext);
+  const keyManager = useContext(KeyManagerContext);
 
-  useEffect(() => {
-    currentAccounts.current = accountsManager?.accounts;
-    const dropdownArr = () => {
-      console.log("accountsManager?.accounts", currentAccounts.current);
-      return currentAccounts.current.map(
-        (account) => [account.name, account.address.toBase58()] as MenuOption
-      );
-    };
-
-    // Account dropdown block
-    if (accountsManager?.accounts && accountsManager?.accounts.length) {
-      Blockly.Blocks["input_account"] = {
-        init: function () {
-          this.appendDummyInput().appendField(
-            new Blockly.FieldDropdown(dropdownArr),
-            "account"
-          );
-          this.setInputsInline(false);
-          this.setOutput(true, "String");
-          this.setColour(230);
-          this.setTooltip("");
-          this.setHelpUrl("");
-        },
-      };
-      javascriptGenerator.forBlock["input_account"] = function (
-        block: Blockly.Block,
-        generator: any
-      ) {
-        var dropdown_options = block.getFieldValue("account");
-        // TODO: Assemble javascript into code variable.
-        var code = "Account:" + dropdown_options;
-        // TODO: Change ORDER_NONE to the correct strength.
-        return [code, javascript.Order.NONE];
-      };
-    }
-
-    // Enum dropdown blocks
-    currentEnumTypes.current = [];
-    programsManager?.programs.map((program) => {
-      program.idl.types
-        ?.filter((type: IdlTypeDef) => {
-          return type.type.kind == "enum";
-        })
-        .map((type: any) => {
-          console.log("pelq");
-          currentEnumTypes.current.push([
-            type.name,
-            type.type.variants.map((variant: any) => {
-              return variant.name;
-            }),
-          ]);
-        });
-    });
-    let enums = currentEnumTypes.current.map((enumType, i) => {
-      Blockly.Blocks["input_" + enumType[0]] = {
-        init: function () {
-          this.appendDummyInput().appendField(enumType[0]);
-          this.appendDummyInput().appendField(
-            new Blockly.FieldDropdown(
-              currentEnumTypes.current[i][1].map((val: string, i: number) => [
-                val,
-                i.toString(),
-              ])
-            ),
-            enumType[0]
-          );
-          this.set;
-          this.setInputsInline(true);
-          this.setOutput(true, "String");
-          this.setColour(230);
-          this.setTooltip("");
-          this.setHelpUrl("");
-        },
-      };
-      javascriptGenerator.forBlock["input_" + enumType[0]] = function (
-        block: Blockly.Block,
-        generator: any
-      ) {
-        var dropdown_options = block.getFieldValue("account");
-        // TODO: Assemble javascript into code variable.
-        var code = "Account:" + dropdown_options;
-        // TODO: Change ORDER_NONE to the correct strength.
-        return [code, javascript.Order.NONE];
-      };
-      return {
-        kind: "block",
-        type: "input_" + enumType[0],
-      };
-    });
-
-    // Create and set toolbox
-    const { ...custom_toolbox } = toolbox;
-    custom_toolbox.contents = [
-      ...custom_toolbox.contents,
-      {
-        kind: "category",
-        name: "Accounts",
-        colour: "#5b67a5",
-        contents: [
-          {
-            kind: "block",
-            type: "input_account",
-          },
-        ],
-      },
-      {
-        kind: "category",
-        name: "Enums",
-        colour: "#a587f7",
-        contents: enums,
-      },
-    ];
-    primaryWorkspace?.current?.updateToolbox(custom_toolbox);
-  }, [accountsManager.accounts, programsManager.programs, toolbox]);
+  const toolboxManager = useRef(new ToolboxManager(
+    primaryWorkspace,
+    toolbox,
+    accountsManager.accounts,
+    keyManager.keys,
+    programsManager.programs
+  ));
 
   useEffect(() => {
     const { initialXml, children, ...rest } = props;
-    if (primaryWorkspace.current === null) {
+    if (Object.keys(primaryWorkspace.current).length == 0) {
       primaryWorkspace.current = Blockly.inject(blocklyDiv.current, {
         toolbox,
         ...rest,
@@ -190,10 +79,28 @@ function BlocklyComponent({
         );
         onSourceChange(code);
       });
-    } else {
+    }
+  }, [primaryWorkspace, blocklyDiv, props, onSourceChange, toolbox]);
+  useEffect(() => {
+    console.log("SETPROGRAMS")
+    toolboxManager.current.setPrograms(programsManager.programs)
+  }, [programsManager.programs, toolbox]);
+  useEffect(() => {
+    console.log("SETACCOUNTS")
+    toolboxManager.current.setAccounts(accountsManager.accounts)
+  }, [accountsManager.accounts, toolboxManager]);
+  useEffect(() => {
+    toolboxManager.current.setSigners(keyManager.keys)
+  }, [keyManager.keys, toolboxManager]);
+  useEffect(() => {
+    console.log("programsManager.programs", programsManager.programs);
+    console.log("BLOCKLY", Blockly, "javascriptGenerator", javascriptGenerator);
+  }, [programsManager.programs]);
+  useEffect(() => {
+    if (Object.keys(primaryWorkspace.current).length != 0) {
       Blockly.svgResize(primaryWorkspace.current);
     }
-  }, [primaryWorkspace, blocklyDiv, props, size, onSourceChange, toolbox]);
+  }, [size])
 
   return (
     <React.Fragment>

@@ -95,3 +95,4 @@ const ProgramsManagerProvider = (props: any) => {
 };
 
 export {ProgramsManagerContext, ProgramsManagerProvider};
+export type { ProgramWAddress, networkInfo };

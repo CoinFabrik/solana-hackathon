@@ -45,4 +45,6 @@ const AccountsManagerProvider = (props: any) => {
   )
 };
 
-export {AccountsManagerContext, AccountsManagerProvider};
+export { AccountsManagerContext, AccountsManagerProvider };
+export type { AccountName };
+
