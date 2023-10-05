@@ -107,7 +107,9 @@ class ToolboxManager {
                 console.log(this.enumTypes, enumType, i)
                 Blockly.Blocks["input_" + enumType[0]] = {
                   init: function () {
-                    this.appendDummyInput().appendField(
+                    this.appendDummyInput()
+                      .appendField(enumType[0])
+                      .appendField(
                       new Blockly.FieldDropdown(()=>{
                             return enumtypes[i][1].map((val: string, i: number) => [
                                 val,
@@ -130,7 +132,7 @@ class ToolboxManager {
                 ) {
                   var dropdown_options = block.getFieldValue("enum_value");
                   // TODO: Assemble javascript into code variable.
-                  var code = "enum_value:" + dropdown_options;
+                  var code = enumType[0] + "_enum_value:" + dropdown_options;
                   // TODO: Change ORDER_NONE to the correct strength.
                   return [code, javascript.Order.NONE];
                 };
