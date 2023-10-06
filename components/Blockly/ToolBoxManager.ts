@@ -5,7 +5,7 @@ import { ProgramWAddress } from "@/services/programLoader";
 import Blockly, { MenuOption, Toolbox } from "blockly/core";
 import javascript, { Order, javascriptGenerator } from "blockly/javascript";
 import { MutableRefObject } from "react";
-import { IdlEnumVariant, IdlField, IdlType, IdlTypeDef, isIdlAccounts } from "@coral-xyz/anchor/dist/cjs/idl";
+import { IdlAccount, IdlAccountItem, IdlEnumVariant, IdlField, IdlType, IdlTypeDef, isIdlAccounts } from "@coral-xyz/anchor/dist/cjs/idl";
 
 const numberTypesSet = new Set([
     "u8",
@@ -67,10 +67,9 @@ class ToolboxManager {
         javascriptGenerator.forBlock['input_account'] = function(block: Blockly.Block, generator: any) {
             var dropdown_options = block.getFieldValue('account');
             var code = `"${dropdown_options}"`;
-            return [code, javascript.Order.NONE];
+            return [code, javascript.Order.MEMBER];
         };
         const signerDropdownArr = ()=>{
-            console.log("this.keypairs", this.keypairs)
             return this.keypairs.map(
                 (keypair)=>[keypair.name, keypair.name] as MenuOption
             )
@@ -88,8 +87,8 @@ class ToolboxManager {
         };
         javascriptGenerator.forBlock['input_signer'] = function(block: Blockly.Block, generator: any) {
             var dropdown = block.getFieldValue('signer');
-            var code = `"${dropdown}_keypair.publicKey"`;
-            return [code, javascript.Order.NONE];
+            var code = `${dropdown}_keypair.publicKey`;
+            return [code, javascript.Order.MEMBER];
         };
         Blockly.Blocks['test_case'] = {
             init: function() {
@@ -176,7 +175,7 @@ class ToolboxManager {
                   // TODO: Assemble javascript into code variable.
                   var code = enumType[0] + "_enum_value:" + dropdown_options;
                   // TODO: Change ORDER_NONE to the correct strength.
-                  return [code, javascript.Order.NONE];
+                  return [code, javascript.Order.MEMBER];
                 };
             });
             this.instructions = [];
@@ -227,7 +226,12 @@ class ToolboxManager {
                             jsonDef.message0 += account.name + "%" + jsonDef.args0.length;
                         }
                     });
-                    console.log("jsonDef",jsonDef)
+                    jsonDef.args0.push({
+                        "type": "input_value",
+                        "name": "TX_SIGNER",
+                        "check": "Signer"
+                    })
+                    jsonDef.message0 += "Transaction signer %" + jsonDef.args0.length;
                     Blockly.Blocks['program_'+program.idl.name+'_'+instruction.name] = {
                         init: function() {
                             this.jsonInit(jsonDef);
@@ -237,11 +241,14 @@ class ToolboxManager {
                         block: Blockly.Block,
                         generator: any
                       ) {
-                        var args = instruction.args.map((arg)=>generator.valueToCode(block, arg.name, Order.RELATIONAL));
+                        var args = instruction.args.map((arg)=>generator.valueToCode(block, arg.name, Order.MEMBER));
                         var accounts = instruction.accounts.reduce((obj,acc)=>
-                            `${obj}\n${acc.name}: ${generator.valueToCode(block, acc.name, Order.RELATIONAL)},`,"" as any)
-                        console.log("accounts",accounts)
-                        var code = `await program_${program.idl.name}.methods.${instruction.name}${args}\n.accounts({${accounts}})`;
+                            `${obj}\n${acc.name}: ${generator.valueToCode(block, acc.name, Order.MEMBER)},`,"");
+                        var signers_code = (instruction.accounts.filter((acc: IdlAccountItem)=>'isSigner' in acc && acc['isSigner']) as any)
+                            .reduce((obj: string,acc: IdlAccount)=>
+                                `${obj}${block.getInputTargetBlock(acc.name)?.getFieldValue("signer")},`
+                            ,"");
+                        var code = `await program_${program.idl.name}.methods.${instruction.name}(${args})\n.accounts({${accounts.substring(0, accounts.length-1)}\n}).signers([${signers_code.substring(0, signers_code.length-1)}])`;
                         return code;
                     };
                     this.instructions.push('program_'+program.idl.name+'_'+instruction.name)
