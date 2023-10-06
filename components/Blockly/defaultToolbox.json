@@ -71,6 +71,17 @@
       "name": "Variables",
       "colour": "#a55b80",
       "custom": "VARIABLE"
+    },
+    {
+      "kind": "category",
+      "name": "Test",
+      "colour": "#a55b80",
+      "contents": [
+        {
+          "kind": "block",
+          "type": "test_case"
+        }
+      ]
     }
   ]
 }
