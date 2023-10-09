@@ -7,6 +7,7 @@ import javascript, { Order, javascriptGenerator } from "blockly/javascript";
 import { MutableRefObject } from "react";
 import {
   IdlAccount,
+  IdlAccountDef,
   IdlAccountItem,
   IdlEnumVariant,
   IdlField,
@@ -35,6 +36,7 @@ class ToolboxManager {
   programs: Array<ProgramWAddress> = [];
   enumTypes: Array<any> = [];
   structTypes: Array<any> = [];
+  accountTypes: Array<any> = [];
   instructions: Array<any> = [];
   workspaceRef: MutableRefObject<Blockly.WorkspaceSvg>;
   constructor(
@@ -177,7 +179,6 @@ class ToolboxManager {
       });
       let enumtypes = this.enumTypes;
       this.enumTypes.map((enumType, i) => {
-        console.log(this.enumTypes, enumType, i);
         Blockly.Blocks["input_" + enumType[0]] = {
           init: function () {
             this.appendDummyInput()
@@ -317,10 +318,38 @@ class ToolboxManager {
             return code;
           };
           this.instructions.push(
-            "program_" + program.idl.name + "_" + instruction.name
+            `program_${program.idl.name}_${instruction.name}`
           );
         });
+        this.accountTypes = [];
+        program.idl.accounts?.map((account)=>{
+          Blockly.Blocks[`get_${program.idl.name}_${account.name}`] = {
+          init: function () {
+              this.appendValueInput("ADDRESS")
+                .appendField(`get ${program.idl.name} ${account.name}`)
+              this.setInputsInline(false);
+              this.setOutput(true, `${program.idl.name}_${account.name}`);
+              this.setColour(230);
+              this.setTooltip("");
+              this.setHelpUrl("");
+            },
+          };
+          this.accountTypes.push(
+            `get_${program.idl.name}_${account.name}`
+          )
+          javascriptGenerator.forBlock[`get_${program.idl.name}_${account.name}`] = function (
+            block: Blockly.Block,
+            generator: any
+          ) {
+            var address = generator.valueToCode(block,"ADDRESS",Order.MEMBER);
+            // TODO: Assemble javascript into code variable.
+            var code = `await program_${program.idl.name}.account.${account.name}.fetch(${address})`
+            // TODO: Change ORDER_NONE to the correct strength.
+            return [code, javascript.Order.MEMBER];
+          };
+        })
       });
+      
       this.workspaceRef.current.updateToolbox(this.generateToolbox());
     }
   }
@@ -414,6 +443,20 @@ class ToolboxManager {
         name: "Instructions",
         colour: "#a587f7",
         contents: instructions,
+      });
+    }
+    if (this.accountTypes.length > 0) {
+      let accountTypes = this.accountTypes.map((account, i) => {
+        return {
+            kind: "block",
+            type: account,
+        };
+      });
+      customContent.push({
+        kind: "category",
+        name: "Get account",
+        colour: "#a587f7",
+        contents: accountTypes,
       });
     }
     let currentToolbox = {
