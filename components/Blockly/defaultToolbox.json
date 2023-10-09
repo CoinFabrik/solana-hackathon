@@ -80,6 +80,10 @@
         {
           "kind": "block",
           "type": "test_case"
+        },
+        {
+          "kind": "block",
+          "type": "assert"
         }
       ]
     }
