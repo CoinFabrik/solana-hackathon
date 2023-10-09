@@ -1,25 +1,6 @@
 "use client";
-import AccountManipulator from "@/components/accountManipulator";
-import Image from "next/image";
 import React, { useState } from "react";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuIndicator,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  NavigationMenuViewport,
-} from "@/components/ui/navigation-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import BlocklyComponent from "@/components/Blockly/BlocklyComponent";
-import * as Blockly from "blockly/core";
 import { Split } from "@geoffcox/react-splitter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SourceCode from "@/components/SourceCodeViewer/sourceCode";
@@ -28,48 +9,6 @@ import { AccountsManagerProvider } from "@/services/accountsManager";
 import { KeyManagerProvider } from "@/services/keysManager";
 import { ProgramsManagerProvider } from "@/services/programLoader";
 import toolbox from "@/components/Blockly/defaultToolbox.json"
-
-var pubKeyBlock = {
-  type: "publicKey",
-  message0: "public key %1",
-  args0: [
-    {
-      type: "field_variable",
-      name: "PublicKey",
-      text: "...",
-    },
-  ],
-  previousStatement: null,
-  nextStatement: null,
-};
-
-Blockly.Blocks["pubKeyBlock"] = {
-  init: function () {
-    this.jsonInit(pubKeyBlock);
-    this.setStyle("loop_blocks");
-  },
-};
-
-var setupGame = {
-  type: "setupGame",
-  message0: "Setup Game %1",
-  args0: [
-    {
-      type: "field_value",
-      name: "PublicKey",
-      text: "...",
-    },
-  ],
-  previousStatement: null,
-  nextStatement: null,
-};
-
-Blockly.Blocks["setupGame"] = {
-  init: function () {
-    this.jsonInit(setupGame);
-    this.setStyle("procedure_blocks");
-  },
-};
 
 const MainComponent = () => {
   const [size, setSize] = useState("70%");

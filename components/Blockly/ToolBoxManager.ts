@@ -100,7 +100,7 @@ class ToolboxManager {
       generator: any
     ) {
       var dropdown = block.getFieldValue("signer");
-      var code = `${dropdown}_keypair.publicKey`;
+      var code = `keypair_${dropdown}.publicKey`;
       return [code, javascript.Order.MEMBER];
     };
     Blockly.Blocks["test_case"] = {
@@ -287,15 +287,22 @@ class ToolboxManager {
                 )},`,
               ""
             );
-            var signers_code = (
+            console.log("instruction.accounts", instruction.accounts)
+            const signers = (
               instruction.accounts.filter(
                 (acc: IdlAccountItem) => "isSigner" in acc && acc["isSigner"]
-              ) as any
-            ).reduce(
-              (obj: string, acc: IdlAccount) =>
-                `${obj}${block
-                  .getInputTargetBlock(acc.name)
-                  ?.getFieldValue("signer")},`,
+              ) as IdlAccount[]
+            ).map((acc: IdlAccount) => 
+                block.getInputTargetBlock(acc.name)?.getFieldValue("signer")
+            );
+            const tx_signer = block.getInputTargetBlock("TX_SIGNER")?.getFieldValue("signer");
+            if(tx_signer && !signers.includes(tx_signer)){
+                signers.push(tx_signer);
+            }
+            var signers_code = signers.reduce(
+              (obj: string, signer: any) => {
+                return signer ? `${obj}${"keypair_"+signer},` : obj
+              },
               ""
             );
             var code = `await program_${program.idl.name}.methods.${
@@ -306,7 +313,7 @@ class ToolboxManager {
             )}\n}).signers([${signers_code.substring(
               0,
               signers_code.length - 1
-            )}])`;
+            )}]);\n`;
             return code;
           };
           this.instructions.push(
