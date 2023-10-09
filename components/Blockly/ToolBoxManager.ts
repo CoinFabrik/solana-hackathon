@@ -28,6 +28,13 @@ const numberTypesSet = new Set([
 ]);
 const bigIntTypesSet = new Set(["u64", "i64", "u128", "i128", "u256", "i256"]);
 
+const colorInstruction = "#317EF3";
+const colorAccount = "#6BC8FA";
+const colorSigner = "#9B0C9B";
+const colorEnum = "#FF4545";
+const colorAssert = "#ED14F1";
+const colorTest = "#F15614";
+
 class ToolboxManager {
   defaultToolbox: ToolboxInfo;
   accounts: Array<AccountName>;
@@ -65,7 +72,7 @@ class ToolboxManager {
           );
         this.setInputsInline(false);
         this.setOutput(true, "Account");
-        this.setColour(230);
+        this.setColour(colorAccount);
         this.setTooltip("");
         this.setHelpUrl("");
       },
@@ -90,7 +97,7 @@ class ToolboxManager {
           .appendField(new Blockly.FieldDropdown(signerDropdownArr), "signer");
         this.setInputsInline(false);
         this.setOutput(true, "Signer");
-        this.setColour(0);
+        this.setColour(colorSigner);
         this.setTooltip("");
         this.setHelpUrl("");
       },
@@ -109,7 +116,7 @@ class ToolboxManager {
           .appendField("Test")
           .appendField(new Blockly.FieldTextInput("#1"), "DESC");
         this.appendStatementInput("TEST_CONTENT").setCheck(null);
-        this.setColour(135);
+        this.setColour(colorTest);
         this.setTooltip("");
         this.setHelpUrl("");
       },
@@ -127,10 +134,14 @@ class ToolboxManager {
 
     Blockly.Blocks["assert"] = {
       init: function () {
-        this.appendDummyInput().appendField("Assert");
-        this.setColour(135);
+        this.appendValueInput("ASSERT")
+          .setCheck("Boolean")
+          .appendField("Assert");
+        this.setColour(colorAssert);
         this.setTooltip("");
         this.setHelpUrl("");
+        this.setPreviousStatement(true);
+        this.setInputsInline(true);
       },
     };
     javascriptGenerator.forBlock["assert"] = function (
@@ -193,7 +204,7 @@ class ToolboxManager {
               );
             this.setInputsInline(true);
             this.setOutput(true, "String");
-            this.setColour(230);
+            this.setColour(colorEnum);
             this.setTooltip("");
             this.setHelpUrl("");
           },
@@ -270,6 +281,7 @@ class ToolboxManager {
             init: function () {
               this.jsonInit(jsonDef);
               this.setInputsInline(false);
+              this.setColour(colorInstruction);
             },
           };
           javascriptGenerator.forBlock[
@@ -287,24 +299,23 @@ class ToolboxManager {
                 )},`,
               ""
             );
-            console.log("instruction.accounts", instruction.accounts)
+            console.log("instruction.accounts", instruction.accounts);
             const signers = (
               instruction.accounts.filter(
                 (acc: IdlAccountItem) => "isSigner" in acc && acc["isSigner"]
               ) as IdlAccount[]
-            ).map((acc: IdlAccount) => 
-                block.getInputTargetBlock(acc.name)?.getFieldValue("signer")
+            ).map((acc: IdlAccount) =>
+              block.getInputTargetBlock(acc.name)?.getFieldValue("signer")
             );
-            const tx_signer = block.getInputTargetBlock("TX_SIGNER")?.getFieldValue("signer");
-            if(tx_signer && !signers.includes(tx_signer)){
-                signers.push(tx_signer);
+            const tx_signer = block
+              .getInputTargetBlock("TX_SIGNER")
+              ?.getFieldValue("signer");
+            if (tx_signer && !signers.includes(tx_signer)) {
+              signers.push(tx_signer);
             }
-            var signers_code = signers.reduce(
-              (obj: string, signer: any) => {
-                return signer ? `${obj}${"keypair_"+signer},` : obj
-              },
-              ""
-            );
+            var signers_code = signers.reduce((obj: string, signer: any) => {
+              return signer ? `${obj}${"keypair_" + signer},` : obj;
+            }, "");
             var code = `await program_${program.idl.name}.methods.${
               instruction.name
             }(${args})\n.accounts({${accounts.substring(
