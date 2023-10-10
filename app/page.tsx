@@ -8,7 +8,7 @@ import SideBar from "@/components/sideBar";
 import { AccountsManagerProvider } from "@/services/accountsManager";
 import { KeyManagerProvider } from "@/services/keysManager";
 import { ProgramsManagerProvider } from "@/services/programLoader";
-import toolbox from "@/components/Blockly/defaultToolbox.json"
+import toolbox from "@/components/Blockly/defaultToolbox.json";
 
 const MainComponent = () => {
   const [size, setSize] = useState("70%");
@@ -20,11 +20,17 @@ const MainComponent = () => {
           <main>
             <div className="h-screen flex flex-col">
               {/* navbar */}
-              <div className="flex-initial flex justify-between items-center border-b p-4">
-                <span className="text-lg font-bold">Navbar</span>
+              <div
+                className="flex-initial flex justify-between items-center border-b p-4 navbar"
+                style={{
+                  background:
+                    "linear-gradient(270deg, rgb(171, 102, 255) 0%, rgb(20, 241, 149) 101.39%);",
+                }}
+              >
+                <span className="font-bold text-3xl	tracking-widest">SOLBricks</span>
                 {/* sidebar visibility toggle */}
               </div>
-              <Split initialPrimarySize="70%" onSplitChanged={setSize}>
+              <Split initialPrimarySize="70%" onSplitChanged={setSize} >
                 <BlocklyComponent
                   readOnly={false}
                   trashcan={true}
@@ -38,8 +44,8 @@ const MainComponent = () => {
                   size={size}
                   toolbox={toolbox}
                 />
-                <div>
-                  <Tabs defaultValue="accounts">
+                <div className="h-full">
+                  <Tabs defaultValue="accounts" className="h-full">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="accounts">Accounts</TabsTrigger>
                       <TabsTrigger value="code">Code</TabsTrigger>
@@ -47,7 +53,7 @@ const MainComponent = () => {
                     <TabsContent value="accounts">
                       <SideBar />
                     </TabsContent>
-                    <TabsContent value="code">
+                    <TabsContent value="code" className="h-full">
                       <SourceCode source={sourceCode} />
                     </TabsContent>
                   </Tabs>

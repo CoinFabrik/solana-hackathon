@@ -75,9 +75,9 @@ class ToolboxManager {
           );
         this.setInputsInline(false);
         this.setOutput(true, "Account");
-        this.setColour(colorAccount);
         this.setTooltip("");
         this.setHelpUrl("");
+        this.setStyle("input_account");
       },
     };
     javascriptGenerator.forBlock["input_account"] = function (
@@ -100,9 +100,9 @@ class ToolboxManager {
           .appendField(new Blockly.FieldDropdown(signerDropdownArr), "signer");
         this.setInputsInline(false);
         this.setOutput(true, "Signer");
-        this.setColour(colorSigner);
         this.setTooltip("");
         this.setHelpUrl("");
+        this.setStyle("input_signer");
       },
     };
     javascriptGenerator.forBlock["input_signer"] = function (
@@ -119,7 +119,7 @@ class ToolboxManager {
           .appendField("Test")
           .appendField(new Blockly.FieldTextInput("#1"), "DESC");
         this.appendStatementInput("TEST_CONTENT").setCheck(null);
-        this.setColour(colorTest);
+        this.setStyle("test_case");
         this.setTooltip("");
         this.setHelpUrl("");
       },
@@ -140,7 +140,7 @@ class ToolboxManager {
         this.appendValueInput("ASSERT")
           .setCheck("Boolean")
           .appendField("Assert");
-        this.setColour(colorAssert);
+        this.setStyle("assert");
         this.setTooltip("");
         this.setHelpUrl("");
         this.setPreviousStatement(true);
@@ -205,7 +205,7 @@ class ToolboxManager {
               );
             this.setInputsInline(true);
             this.setOutput(true, "String");
-            this.setColour(colorEnum);
+            this.setStyle("enum_block");
             this.setTooltip("");
             this.setHelpUrl("");
           },
@@ -215,9 +215,7 @@ class ToolboxManager {
           generator: any
         ) {
           var dropdown_options = block.getFieldValue("enum_value");
-          // TODO: Assemble javascript into code variable.
           var code = enumType[0] + "_enum_value:" + dropdown_options;
-          // TODO: Change ORDER_NONE to the correct strength.
           return [code, javascript.Order.MEMBER];
         };
       });
@@ -282,7 +280,7 @@ class ToolboxManager {
             init: function () {
               this.jsonInit(jsonDef);
               this.setInputsInline(false);
-              this.setColour(colorInstruction);
+              this.setStyle("instruction_blocks");
             },
           };
           javascriptGenerator.forBlock[
@@ -342,7 +340,7 @@ class ToolboxManager {
               );
               this.setInputsInline(false);
               this.setOutput(true, `${program.idl.name}_${account.name}`);
-              this.setColour(colorGetAccount);
+              this.setStyle("get_account");
               this.setTooltip("");
               this.setHelpUrl("");
             },
@@ -352,9 +350,7 @@ class ToolboxManager {
             `get_${program.idl.name}_${account.name}`
           ] = function (block: Blockly.Block, generator: any) {
             var address = generator.valueToCode(block, "ADDRESS", Order.MEMBER);
-            // TODO: Assemble javascript into code variable.
             var code = `await program_${program.idl.name}.account.${account.name}.fetch(${address})`;
-            // TODO: Change ORDER_NONE to the correct strength.
             return [code, javascript.Order.MEMBER];
           };
         });
@@ -374,24 +370,24 @@ class ToolboxManager {
     } else {
       if (type.startsWith("i")) {
         let min = -(2 ^ (bits - 1));
-        let max = 2 ^ (bits - 1);
+        let max = (2 ^ (bits - 1)) - 1;
         return {
           type: "field_number",
           name: name,
           value: 0,
           min: min,
           max: max,
-          precision: 0,
+          precision: 1,
         };
       } else {
-        let max = 2 ^ bits;
+        let max = (2 ^ bits) - 1;
         return {
           type: "field_number",
           name: name,
           value: 0,
           min: 0,
           max: max,
-          precision: 0,
+          precision: 1,
         };
       }
     }
@@ -404,7 +400,7 @@ class ToolboxManager {
         kind: "category",
         name: "Accounts",
         id: "ACCOUNTS",
-        colour: "#5b67a5",
+        categorystyle: "accounts",
         contents: [
           {
             kind: "block",
@@ -418,7 +414,7 @@ class ToolboxManager {
         kind: "category",
         name: "Signers",
         id: "SIGNERS",
-        colour: "#5b67a5",
+        categorystyle: "signers",
         contents: [
           {
             kind: "block",
@@ -437,7 +433,7 @@ class ToolboxManager {
       customContent.push({
         kind: "category",
         name: "Enums",
-        colour: "#a587f7",
+        categorystyle: "enums",
         contents: enums,
       });
     }
@@ -451,7 +447,7 @@ class ToolboxManager {
       customContent.push({
         kind: "category",
         name: "Instructions",
-        colour: "#a587f7",
+        categorystyle: "instructions",
         contents: instructions,
       });
     }
@@ -465,8 +461,8 @@ class ToolboxManager {
       customContent.push({
         kind: "category",
         name: "Get account",
-        colour: "#a587f7",
         contents: accountTypes,
+        categorystyle: "get_account",
       });
     }
     let currentToolbox = {

@@ -75,7 +75,7 @@
     {
       "kind": "category",
       "name": "Test",
-      "colour": "#a55b80",
+      "categorystyle": "test",
       "contents": [
         {
           "kind": "block",

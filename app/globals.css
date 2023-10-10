@@ -74,3 +74,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+.navbar {
+  background: linear-gradient(270deg, rgb(20, 241, 149) 0%, rgb(171, 102, 255) 101.39%);
+}
+
+.secondary {
+  background-color: #cecece;
+}
+
+.default-splitter {
+  background-color: #c0c0c0;
+}
+
+.full-content {
+  overflow: scroll;
+}

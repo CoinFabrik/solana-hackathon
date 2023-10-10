@@ -34,6 +34,7 @@ import { IdlTypeDef } from "@coral-xyz/anchor/dist/cjs/idl";
 import { KeyManagerContext } from "@/services/keysManager";
 import { ToolboxInfo } from "blockly/core/utils/toolbox";
 import { ToolboxManager } from "./ToolBoxManager";
+import theme from "./theme";
 
 Blockly.setLocale(locale);
 
@@ -76,6 +77,7 @@ function BlocklyComponent({
     if (Object.keys(primaryWorkspace.current).length == 0) {
       primaryWorkspace.current = Blockly.inject(blocklyDiv.current, {
         toolbox,
+        theme,
         ...rest,
       });
       const storage = localStorage.getItem("PrimaryWorkspace");

@@ -22,6 +22,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.0.0",
     "code-prettify": "github:alex-milanov/code-prettify",
+    "color": "^4.2.3",
     "i": "^0.3.7",
     "lucide-react": "^0.279.0",
     "next": "latest",

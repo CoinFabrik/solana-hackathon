@@ -7,7 +7,7 @@ import './sourceCode.css';
 
 const SourceCode = ({source, ...props}: {source: any}) => {
   return (
-    <div>
+    <div className="overflow-auto ">
       <pre className="prettyprint">
         <code className="javascript" dangerouslySetInnerHTML={{__html: codePrettify.prettyPrintOne(source)}}>
         </code>
