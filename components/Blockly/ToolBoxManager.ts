@@ -305,8 +305,9 @@ class ToolboxManager {
               instruction.accounts.filter(
                 (acc: IdlAccountItem) => "isSigner" in acc && acc["isSigner"]
               ) as IdlAccount[]
-            ).map((acc: IdlAccount) =>
-              block.getInputTargetBlock(acc.name)?.getFieldValue("signer")
+            ).map(
+              (acc: IdlAccount) =>
+                block.getInputTargetBlock(acc.name)?.getFieldValue("signer")
             );
             const tx_signer = block
               .getInputTargetBlock("TX_SIGNER")
@@ -322,10 +323,10 @@ class ToolboxManager {
             }(${args})\n.accounts({${accounts.substring(
               0,
               accounts.length - 1
-            )}\n}).signers([${signers_code.substring(
+            )}\n})\n.signers([${signers_code.substring(
               0,
               signers_code.length - 1
-            )}]);\n`;
+            )}]);\n\n`;
             return code;
           };
           this.instructions.push(
