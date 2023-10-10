@@ -35,6 +35,7 @@ const colorSigner = "#9B0C9B";
 const colorEnum = "#FF4545";
 const colorAssert = "#ED14F1";
 const colorTest = "#F15614";
+const colorGetAccount = "#317EF3";
 
 class ToolboxManager {
   defaultToolbox: ToolboxInfo;
@@ -340,7 +341,7 @@ class ToolboxManager {
               );
               this.setInputsInline(false);
               this.setOutput(true, `${program.idl.name}_${account.name}`);
-              this.setColour(230);
+              this.setColour(colorGetAccount);
               this.setTooltip("");
               this.setHelpUrl("");
             },
