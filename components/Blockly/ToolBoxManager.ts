@@ -150,10 +150,9 @@ class ToolboxManager {
       block: Blockly.Block,
       generator: any
     ) {
-      var testDesc = block.getFieldValue("DESC");
-      var testContent = generator.statementToCode(block, "TEST_CONTENT");
-      console.log(testContent);
-      var code = `it("${testDesc}", async() => {\n${testContent}\n}`;
+      var assertValue = block.getFieldValue("ASSERT");
+      console.log(assertValue);
+      var code = `assert(${assertValue})\n`;
       return code;
     };
   }
@@ -333,11 +332,12 @@ class ToolboxManager {
           );
         });
         this.accountTypes = [];
-        program.idl.accounts?.map((account)=>{
+        program.idl.accounts?.map((account) => {
           Blockly.Blocks[`get_${program.idl.name}_${account.name}`] = {
-          init: function () {
-              this.appendValueInput("ADDRESS")
-                .appendField(`get ${program.idl.name} ${account.name}`)
+            init: function () {
+              this.appendValueInput("ADDRESS").appendField(
+                `get ${program.idl.name} ${account.name}`
+              );
               this.setInputsInline(false);
               this.setOutput(true, `${program.idl.name}_${account.name}`);
               this.setColour(230);
@@ -345,22 +345,19 @@ class ToolboxManager {
               this.setHelpUrl("");
             },
           };
-          this.accountTypes.push(
+          this.accountTypes.push(`get_${program.idl.name}_${account.name}`);
+          javascriptGenerator.forBlock[
             `get_${program.idl.name}_${account.name}`
-          )
-          javascriptGenerator.forBlock[`get_${program.idl.name}_${account.name}`] = function (
-            block: Blockly.Block,
-            generator: any
-          ) {
-            var address = generator.valueToCode(block,"ADDRESS",Order.MEMBER);
+          ] = function (block: Blockly.Block, generator: any) {
+            var address = generator.valueToCode(block, "ADDRESS", Order.MEMBER);
             // TODO: Assemble javascript into code variable.
-            var code = `await program_${program.idl.name}.account.${account.name}.fetch(${address})`
+            var code = `await program_${program.idl.name}.account.${account.name}.fetch(${address})`;
             // TODO: Change ORDER_NONE to the correct strength.
             return [code, javascript.Order.MEMBER];
           };
-        })
+        });
       });
-      
+
       this.workspaceRef.current.updateToolbox(this.generateToolbox());
     }
   }
@@ -459,8 +456,8 @@ class ToolboxManager {
     if (this.accountTypes.length > 0) {
       let accountTypes = this.accountTypes.map((account, i) => {
         return {
-            kind: "block",
-            type: account,
+          kind: "block",
+          type: account,
         };
       });
       customContent.push({
