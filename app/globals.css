@@ -90,3 +90,7 @@
 .full-content {
   overflow: scroll;
 }
+
+.react-split__pane {
+  height: 100%;
+}

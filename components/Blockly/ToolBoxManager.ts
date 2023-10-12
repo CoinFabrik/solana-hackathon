@@ -2,10 +2,11 @@ import { ToolboxDefinition, ToolboxInfo } from "blockly/core/utils/toolbox";
 import { AccountName } from "@/services/accountsManager";
 import { KeypairName } from "@/services/keysManager";
 import { ProgramWAddress } from "@/services/programLoader";
-import Blockly, { MenuOption, Toolbox } from "blockly/core";
+import Blockly, { Block, MenuOption, Toolbox } from "blockly/core";
 import javascript, { Order, javascriptGenerator } from "blockly/javascript";
 import { MutableRefObject } from "react";
 import {
+  Idl,
   IdlAccount,
   IdlAccountDef,
   IdlAccountItem,
@@ -13,9 +14,12 @@ import {
   IdlField,
   IdlType,
   IdlTypeDef,
+  IdlTypeDefined,
   isIdlAccounts,
 } from "@coral-xyz/anchor/dist/cjs/idl";
 import { logic } from "blockly/blocks";
+import { BlockMove } from "blockly/core/events/events_block_move";
+import { BlockChange } from "blockly/core/events/events_block_change";
 
 const numberTypesSet = new Set([
   "u8",
@@ -62,7 +66,7 @@ class ToolboxManager {
 
     const accountsDropdownArr = () => {
       return this.accounts.map(
-        (account) => [account.name, account.address.toBase58()] as MenuOption
+        (account) => [account.name, account.name] as MenuOption
       );
     };
     Blockly.Blocks["input_account"] = {
@@ -85,7 +89,7 @@ class ToolboxManager {
       generator: any
     ) {
       var dropdown_options = block.getFieldValue("account");
-      var code = `"${dropdown_options}"`;
+      var code = `account_${dropdown_options}`;
       return [code, javascript.Order.MEMBER];
     };
     const signerDropdownArr = () => {
@@ -131,7 +135,7 @@ class ToolboxManager {
       var testDesc = block.getFieldValue("DESC");
       var testContent = generator.statementToCode(block, "TEST_CONTENT");
       console.log(testContent);
-      var code = `it("${testDesc}", async() => {\n${testContent}\n}`;
+      var code = `it("${testDesc}", async() => {\n${testContent}\n});`;
       return code;
     };
 
@@ -151,13 +155,53 @@ class ToolboxManager {
       block: Blockly.Block,
       generator: any
     ) {
-      var assertValue = block.getFieldValue("ASSERT");
-      console.log(assertValue);
-      var code = `assert(${assertValue})\n`;
+      var assertValue = generator.valueToCode(block, "ASSERT", Order.NONE);
+      var code = `assert(${assertValue},"${assertValue}")\n`;
       return code;
     };
+    Blockly.Blocks['get_from_array'] = {
+      init: function() {
+        this.appendValueInput("ARRAY")
+            .setCheck(null)
+            .appendField("get")
+            .appendField(new Blockly.FieldNumber(0), "INDEX")
+            .appendField("index from");
+        this.setOutput(true, null);
+        this.setColour(230);
+     this.setTooltip("");
+     this.setHelpUrl("");
+      }
+    };
+    javascript.javascriptGenerator.forBlock['get_from_array'] = function (
+      block: Blockly.Block,
+      generator: any
+    ) {
+      var index = block.getFieldValue('INDEX');
+      var array = generator.valueToCode(block, 'ARRAY', Order.ATOMIC);
+      // TODO: Assemble javascript into code variable.
+      var code = `${array}[${index}]`;
+      return [code, Order.MEMBER];
+    };
   }
-  generatePreamble() {}
+  generatePreamble() {
+    let preamble = "";
+    if(this.keypairs.length){
+      preamble = this.keypairs.reduce((preamble, key)=>{
+        return preamble+`const keypair_${key.name} = anchor.web3.Keypair.generate();\n`
+      }, preamble)
+    }
+    if(this.accounts.length){
+      preamble = this.accounts.reduce((preamble, account)=>{
+        return preamble+`const account_${account.name} = new anchor.web3.PublicKey("${account.address.toBase58()}");\n`
+      }, preamble)
+    }
+    if(this.programs.length){
+      preamble = this.programs.reduce((preamble, program)=>{
+        return preamble+`const program_${program.idl.name} = await anchor.Program.at(\nnew anchor.web3.PublicKey("${program.address.toBase58()}")\n);\n`
+      }, preamble)
+    }
+    return preamble;
+  }
   setSigners(signers: Array<KeypairName>) {
     this.keypairs = [...signers];
     if (this.keypairs.length) {
@@ -243,16 +287,20 @@ class ToolboxManager {
           instruction.args.map((arg: IdlField) => {
             if (numberTypesSet.has(arg.type.toString())) {
               jsonDef.args0.push(
-                this.generateNumberField(arg.type.toString(), arg.name)
+                this.generateNumberField(arg.type.toString(), arg.name),
+                {
+                  type: "input_dummy",
+                },
               );
+              jsonDef.message0 += arg.name + "%" + (jsonDef.args0.length-1) + "%" + jsonDef.args0.length;
             } else {
               jsonDef.args0.push({
                 type: "input_value",
                 name: arg.name,
                 //aca hay que hacer un check con el tipo que deberia tener
               });
+              jsonDef.message0 += arg.name + "%" + jsonDef.args0.length;
             }
-            jsonDef.message0 += arg.name + "%" + jsonDef.args0.length;
           });
           jsonDef.args0.push({
             type: "input_dummy",
@@ -335,10 +383,15 @@ class ToolboxManager {
         program.idl.accounts?.map((account) => {
           Blockly.Blocks[`get_${program.idl.name}_${account.name}`] = {
             init: function () {
+              this.data = JSON.stringify({
+                fields: account.type.fields,
+                idl: program.idl
+              })
               this.appendValueInput("ADDRESS").appendField(
                 `get ${program.idl.name} ${account.name}`
               );
               this.setInputsInline(false);
+              console.log("`${program.idl.name}_${account.name}`", `${program.idl.name}_${account.name}`)
               this.setOutput(true, `${program.idl.name}_${account.name}`);
               this.setStyle("get_account");
               this.setTooltip("");
@@ -355,7 +408,49 @@ class ToolboxManager {
           };
         });
       });
-
+      const structs = programs.reduce((structs, program)=>{
+        let programStructs = program.idl.accounts?.map((account)=>
+          `${program.idl.name}_${account.name}`
+        )
+        if(programStructs?.length)
+          structs.push(...programStructs)
+        return structs;
+      },[] as any[])
+      console.log("structs", structs)
+      Blockly.Blocks["field_from_struct"] = {
+        init: function() {
+          const thisBlock = this as Block;
+          this.appendValueInput("STRUCT")
+              .setCheck(structs)
+              .appendField("return")
+              .appendField(new Blockly.FieldDropdown(()=>{
+                const jsonData = thisBlock.getInputTargetBlock("STRUCT")?.data;
+                if(jsonData){
+                  const data = JSON.parse(jsonData)
+                  const fields = data?.fields?.map((field: IdlField)=>{
+                    return [field.name, field.name] as MenuOption
+                  })
+                  if(fields) {
+                    return fields;
+                  }
+                }
+                return [["",""]] as MenuOption[]
+              }), "FIELD_NAME")
+              .appendField("from");
+          this.setInputsInline(false);
+          this.setOutput(true, null);
+          this.setColour(230);
+        },
+      }
+      javascriptGenerator.forBlock["field_from_struct"] = function (
+        block: Blockly.Block,
+        generator: any
+      ) {
+        var struct = generator.valueToCode(block, "STRUCT", Order.ATOMIC);
+        var fieldName = block.getFieldValue("FIELD_NAME");
+        var code = `${struct}.${fieldName}`;
+        return [code, javascript.Order.MEMBER];
+      };
       this.workspaceRef.current.updateToolbox(this.generateToolbox());
     }
   }
@@ -369,8 +464,8 @@ class ToolboxManager {
       };
     } else {
       if (type.startsWith("i")) {
-        let min = -(2 ^ (bits - 1));
-        let max = (2 ^ (bits - 1)) - 1;
+        let min = -Math.pow(2, bits - 1);
+        let max =  Math.pow(2, bits - 1) - 1;
         return {
           type: "field_number",
           name: name,
@@ -380,7 +475,7 @@ class ToolboxManager {
           precision: 1,
         };
       } else {
-        let max = (2 ^ bits) - 1;
+        let max =  Math.pow(2, bits) - 1;
         return {
           type: "field_number",
           name: name,
@@ -458,6 +553,13 @@ class ToolboxManager {
           type: account,
         };
       });
+      accountTypes.push({
+        kind: "block",
+        type: "field_from_struct",
+      },{
+        kind: "block",
+        type: "get_from_array",
+      })
       customContent.push({
         kind: "category",
         name: "Get account",

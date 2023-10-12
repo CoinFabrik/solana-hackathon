@@ -59,7 +59,9 @@ class ProgramsManager {
         networkId: this.networkInfo.selectedNetwork
       }]
       this.setList(arr);
-      localStorage.setItem("ProgramsManager", JSON.stringify(arr))
+
+      if (typeof window !== 'undefined')
+        localStorage.setItem("ProgramsManager", JSON.stringify(arr))
     }
   }
   removeProgram(address: PublicKey) {
@@ -72,8 +74,10 @@ class ProgramsManager {
 const ProgramsManagerContext = createContext({} as ProgramsManager);
 
 const ProgramsManagerProvider = (props: any) => {
-  const json = localStorage.getItem("ProgramsManager");
-  const [list, setList] = useState<Array<ProgramWAddress>>(json?JSON.parse(json):[]);
+  let json;
+  if (typeof window !== 'undefined')
+    json = localStorage.getItem("ProgramsManager");
+  const [list, setList] = useState<Array<ProgramWAddress>>(json?JSON.parse(json,(key, value)=>key==="address"?new PublicKey(value):value):[]);
   const [networks, setNetworks] = useState({
     selectedNetwork: 1,
     networks:[

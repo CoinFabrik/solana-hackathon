@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import BlocklyComponent from "@/components/Blockly/BlocklyComponent";
-import { Split } from "@geoffcox/react-splitter";
+//import { Split } from "@geoffcox/react-splitter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SourceCode from "@/components/SourceCodeViewer/sourceCode";
 import SideBar from "@/components/sideBar";
@@ -9,10 +9,21 @@ import { AccountsManagerProvider } from "@/services/accountsManager";
 import { KeyManagerProvider } from "@/services/keysManager";
 import { ProgramsManagerProvider } from "@/services/programLoader";
 import toolbox from "@/components/Blockly/defaultToolbox.json";
+import dynamic from "next/dynamic";
 
+const Split = dynamic(
+  () => import("@geoffcox/react-splitter").then((f)=>f.Split),
+  { ssr: false }
+)
 const MainComponent = () => {
-  const [size, setSize] = useState("70%");
+  const [size, setSize] = useState("");
   const [sourceCode, setSourceCode] = useState("");
+  const layoutCSS = {
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  };
   return (
     <AccountsManagerProvider>
       <KeyManagerProvider>
@@ -22,14 +33,11 @@ const MainComponent = () => {
               {/* navbar */}
               <div
                 className="flex-initial flex justify-between items-center border-b p-4 navbar"
-                style={{
-                  background:
-                    "linear-gradient(270deg, rgb(171, 102, 255) 0%, rgb(20, 241, 149) 101.39%);",
-                }}
               >
                 <span className="font-bold text-3xl	tracking-widest">SOLBricks</span>
                 {/* sidebar visibility toggle */}
               </div>
+              
               <Split initialPrimarySize="70%" onSplitChanged={setSize} >
                 <BlocklyComponent
                   readOnly={false}

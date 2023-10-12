@@ -29,20 +29,25 @@ class KeyManager {
       name
     }];
     this.setList(arr);
-    localStorage.setItem("KeyManager", JSON.stringify(arr, (key, value)=>key==="keypair"?value.secretKey.toString():value))
+    if (typeof window !== 'undefined')
+      localStorage.setItem("KeyManager", JSON.stringify(arr, (key, value)=>key==="keypair"?value.secretKey.toString():value))
     return true;
   }
   removeKey(name: string) {
     const arr = this.keys.filter((v)=>v.name != name);
     this.setList(arr);
-    localStorage.setItem("KeyManager", JSON.stringify(arr, (key, value)=>key==="keypair"?value.secretKey.toString():value))
+
+    if (typeof window !== 'undefined')
+      localStorage.setItem("KeyManager", JSON.stringify(arr, (key, value)=>key==="keypair"?value.secretKey.toString():value))
   }
 }
 
 const KeyManagerContext = createContext({} as KeyManager);
 
 const KeyManagerProvider = (props: any) => {
-  const json = localStorage.getItem("KeyManager");
+  let json;
+  if (typeof window !== 'undefined')
+    json = localStorage.getItem("KeyManager");
   const [list, setList] = useState<Array<KeypairName>>(
     json?JSON.parse(json,(key, value)=>key==="keypair"?Keypair.fromSecretKey(new Uint8Array(value.split(','))):value)
     :[]

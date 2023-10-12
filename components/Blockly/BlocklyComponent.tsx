@@ -20,7 +20,7 @@
  * @fileoverview Blockly React Component.
  * @author samelh@google.com (Sam El-Husseini)
  */
-
+"use client"
 import React, { MutableRefObject, useContext, useState } from "react";
 import "./BlocklyComponent.css";
 import { useEffect, useRef } from "react";
@@ -98,6 +98,7 @@ function BlocklyComponent({
         var code = javascriptGenerator.workspaceToCode(
           primaryWorkspace.current
         );
+        code = toolboxManager.current.generatePreamble() + code
         onSourceChange(code);
         // Saving workspace state
         const state = Blockly.serialization.workspaces.save(

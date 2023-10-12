@@ -2,6 +2,7 @@
 import { Keypair, PublicKey } from '@solana/web3.js'
 import { Context, Dispatch, createContext, useContext, useState } from 'react';
 
+
 interface AccountName {
     name: string;
     address: PublicKey;
@@ -20,19 +21,23 @@ class AccountsManager {
       name
     }];
     this.setList(arr);
-    localStorage.setItem("AccountsManager", JSON.stringify(arr));
+    if (typeof window !== 'undefined')
+      localStorage.setItem("AccountsManager", JSON.stringify(arr));
   }
   removeAccount(name: string) {
     const arr = this.accounts.filter((v)=>v.name != name);
     this.setList(arr);
-    localStorage.setItem("AccountsManager", JSON.stringify(arr));
+    if (typeof window !== 'undefined')
+      localStorage.setItem("AccountsManager", JSON.stringify(arr));
   }
 }
 
 const AccountsManagerContext = createContext({} as AccountsManager);
 
 const AccountsManagerProvider = (props: any) => {
-  const json = localStorage.getItem("AccountsManager");
+  let json;
+  if (typeof window !== 'undefined')
+    json = localStorage.getItem("AccountsManager");
   const [list, setList] = useState<Array<AccountName>>(
     json?JSON.parse(json,(key, value)=>key==="address"?new PublicKey(value):value)
     :[]
