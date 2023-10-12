@@ -40,6 +40,11 @@ const AccountManipulator = () => {
 
   const { getCollapseProps, getToggleProps, isExpanded } = useCollapse();
 
+  const handleKeyPress = (e: any) => {
+    if (e.key === "Enter" && name && isPubKeyValid(address)) {
+      handleAdd();
+    }
+  };
   return (
     <div className="w-full max-w-md mx-auto collapsible">
       <h2 className="text-xl font-semibold mb-4 header" {...getToggleProps()}>
@@ -54,6 +59,7 @@ const AccountManipulator = () => {
             placeholder="Enter name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onKeyDown={handleKeyPress}
           />
           <Input
             type="text"
@@ -61,6 +67,7 @@ const AccountManipulator = () => {
             placeholder="Enter address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
+            onKeyDown={handleKeyPress}
           />
           <Button
             className="ml-2"

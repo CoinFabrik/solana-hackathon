@@ -34,6 +34,11 @@ const ProgramsManipulator = () => {
 
   const { getCollapseProps, getToggleProps, isExpanded } = useCollapse();
 
+  const handleKeyPress = (e: any) => {
+    if (e.key === "Enter" && isPubKeyValid(address)) {
+      handleAdd();
+    }
+  };
   return (
     <div className="w-full max-w-md mx-auto collapsible">
       <h2 className="text-xl font-semibold mb-4 header" {...getToggleProps()}>
@@ -47,6 +52,7 @@ const ProgramsManipulator = () => {
             placeholder="Enter address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
+            onKeyDown={handleKeyPress}
           />
           <Button
             className="ml-2"

@@ -9,3 +9,9 @@
 .networkSelector {
   background-color: #9945ff;
 }
+
+input[type="text"],
+textarea {
+  background-color: #e1e1e1;
+  border: 1px solid #ccc;
+}

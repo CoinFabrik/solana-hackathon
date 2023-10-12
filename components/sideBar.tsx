@@ -4,6 +4,7 @@ import React, { useContext, useState } from "react";
 import AccountManipulator from "@/components/accountManipulator";
 import KeyManipulator from "@/components/keyManipulator";
 import ProgramsManipulator from "./programsManipulator";
+import ClearLocalStorageAndReload from "./clearstorage";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,7 +25,7 @@ const SideBar = () => {
       <div className="w-full max-w-md mx-auto">
         <div className="grid gap-4">
           <DropdownMenu>
-            <DropdownMenuTrigger className="w-full p-2 networkSelector text-white rounded-md ">
+            <DropdownMenuTrigger className="w-full p-2 networkSelector text-white rounded-md z">
               Select network:{" "}
               {
                 programsManager?.networkInfo.networks[
@@ -45,6 +46,7 @@ const SideBar = () => {
       <AccountManipulator />
       <KeyManipulator />
       <ProgramsManipulator />
+      <ClearLocalStorageAndReload />
     </>
   );
 };

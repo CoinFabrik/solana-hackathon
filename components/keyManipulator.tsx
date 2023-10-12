@@ -25,6 +25,12 @@ const KeyManipulator = () => {
 
   const { getCollapseProps, getToggleProps, isExpanded } = useCollapse();
 
+  const handleKeyPress = (e: any) => {
+    if (e.key === "Enter" && name) {
+      handleAdd();
+    }
+  };
+
   return (
     <div className="w-full max-w-md mx-auto collapsible">
       <h2 className="text-xl font-semibold mb-4 header" {...getToggleProps()}>
@@ -38,6 +44,7 @@ const KeyManipulator = () => {
             placeholder="Enter name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onKeyDown={handleKeyPress}
           />
           <Button
             className="ml-2"
