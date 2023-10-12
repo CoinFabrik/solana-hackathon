@@ -17,6 +17,18 @@
         {
           "kind": "block",
           "type": "logic_boolean"
+        },
+        {
+          "kind": "block",
+          "type": "text"
+        },
+        {
+          "kind": "block",
+          "type": "init_array"
+        },
+        {
+          "kind": "block",
+          "type": "push_into_array"
         }
       ]
     },

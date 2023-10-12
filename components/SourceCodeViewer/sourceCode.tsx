@@ -3,6 +3,7 @@
 import codePrettify from "code-prettify";
 import { Button } from "@/components/ui/button";
 import * as anchor from "@coral-xyz/anchor";
+import * as web3 from "@solana/web3.js";
 
 import React, { useContext, useState } from "react";
 import "./sourceCode.css";
@@ -15,13 +16,16 @@ import "react-toastify/dist/ReactToastify.css";
 
 const SourceCode = ({ source, ...props }: { source: any }) => {
   const programsManager = useContext(ProgramsManagerContext);
-
+  const [keyPair, setKeypair] = useState(null as any);
+  if(keyPair == null){
+    setKeypair(Keypair.generate());
+  }
   const runCode = async () => {
     if (typeof window !== "undefined") {
-      console.log(source);
       let tests: Array<[string, Function]> = [];
       let results: Array<[boolean, string]> = [];
       (window as any).anchor = anchor;
+      (window as any).web3 = web3;
       (window as any).it = (desc: string, fun: Function) => {
         tests.push([desc, fun]);
       };
@@ -33,14 +37,17 @@ const SourceCode = ({ source, ...props }: { source: any }) => {
           programsManager.networkInfo.selectedNetwork
         ].url
       );
+      await conn.requestAirdrop(keyPair.publicKey, 1e9);
       (window as any).connection = conn;
-      anchor.setProvider(
-        new AnchorProvider(
-          conn,
-          new VirtualWallet(Keypair.generate()),
-          AnchorProvider.defaultOptions()
-        )
-      );
+      let provider = new AnchorProvider(
+        conn,
+        new VirtualWallet(keyPair),
+        {
+          commitment: "confirmed"
+      });
+      anchor.setProvider(provider);
+      (window as any).provider = provider;
+      
       let asyncfunc = eval(`async ()=>{${source}}`);
       await asyncfunc();
       for (let test of tests) {

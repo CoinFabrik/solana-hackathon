@@ -2,7 +2,7 @@ import { ToolboxDefinition, ToolboxInfo } from "blockly/core/utils/toolbox";
 import { AccountName } from "@/services/accountsManager";
 import { KeypairName } from "@/services/keysManager";
 import { ProgramWAddress } from "@/services/programLoader";
-import Blockly, { Block, MenuOption, Toolbox } from "blockly/core";
+import Blockly, { Block, Events, MenuOption, Toolbox } from "blockly/core";
 import javascript, { Order, javascriptGenerator } from "blockly/javascript";
 import { MutableRefObject } from "react";
 import {
@@ -134,7 +134,6 @@ class ToolboxManager {
     ) {
       var testDesc = block.getFieldValue("DESC");
       var testContent = generator.statementToCode(block, "TEST_CONTENT");
-      console.log(testContent);
       var code = `it("${testDesc}", async() => {\n${testContent}\n});`;
       return code;
     };
@@ -182,6 +181,94 @@ class ToolboxManager {
       var code = `${array}[${index}]`;
       return [code, Order.MEMBER];
     };
+
+    Blockly.Blocks['get_pda'] = {
+      init: function() {
+        this.appendValueInput("ARRAY")
+            .setCheck(null)
+            .appendField("Derive pda from array");
+        this.setInputsInline(true);
+        this.setOutput(true, null);
+        this.setColour(230);
+      this.setTooltip("");
+      this.setHelpUrl("");
+      let thisBlock = this as Block;
+      },
+    };
+    javascript.javascriptGenerator.forBlock['get_pda'] = function (
+      block: Blockly.Block,
+      generator: any
+    ) {
+      var array = generator.valueToCode(block, 'ARRAY', Order.NONE);
+      // TODO: Assemble javascript into code variable.
+      var code = `(await anchor.web3.PublicKey.findProgramAddress(
+        ${array},
+        program_pennies.programId
+      ))[0]`;
+      return [code, Order.MEMBER];
+    };
+    Blockly.Blocks['init_array'] = {
+      init: function() {
+        this.appendValueInput("VALUE")
+            .setCheck(null)
+            .appendField("Init array with value:");
+        this.setOutput(true, null);
+        this.setColour(230);
+     this.setTooltip("");
+     this.setHelpUrl("");
+      }
+    };
+    javascript.javascriptGenerator.forBlock['init_array'] = function(
+      block: Blockly.Block,
+      generator: any
+    ) {
+      var value = generator.valueToCode(block, 'VALUE', Order.NONE);
+      var code;
+      if(!block.getChildren(false)[0]) {
+         code = `[]`
+      } else if(block.getChildren(false)[0].type == "text"){
+        code = `[anchor.utils.bytes.utf8.encode(${value})]`;
+      } else if(block.getChildren(false)[0].type == "input_account") {
+        code = `[${value}.toBuffer()]`;
+      } else if(block.getChildren(false)[0].type == "input_signer") {
+        code = `[${value}.toBuffer()]`;
+      } else code = `[${value}]`;
+      return [code, Order.NONE];
+    };
+    Blockly.Blocks['push_into_array'] = {
+      init: function() {
+        this.appendValueInput("ITEM")
+            .setCheck(null)
+            .appendField("Push item");
+        this.appendValueInput("ARRAY")
+            .setCheck(null)
+            .appendField("into array");
+        this.setInputsInline(true);
+        this.setColour(230);
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+     this.setTooltip("");
+     this.setHelpUrl("");
+      }
+    };
+    javascript.javascriptGenerator.forBlock['push_into_array'] = function(
+      block: Blockly.Block,
+      generator: any
+    ) {
+      var array = generator.valueToCode(block, 'ARRAY', javascript.Order.ATOMIC);
+      var value = generator.valueToCode(block, 'ITEM', javascript.Order.NONE);
+      var code;
+      if(!block.getChildren(true)[0]) {
+         code = `${array}.push(${value});\n`;
+      } else if(block.getChildren(true)[0].type == "text"){
+        code = `${array}.push(anchor.utils.bytes.utf8.encode(${value}));\n`;
+      } else if(block.getChildren(true)[0].type == "input_account") {
+        code = `${array}.push(${value}.toBuffer());\n`;
+      } else if(block.getChildren(true)[0].type == "input_signer") {
+        code = `${array}.push(${value}.toBuffer());\n`;
+      } else code = `${array}.push(${value}`;
+      return code;
+    };
   }
   generatePreamble() {
     let preamble = `async function requestAirdrop(wallet_pubkey){
@@ -194,7 +281,7 @@ class ToolboxManager {
           blockhash,
           lastValidBlockHeight,
           signature
-      },'finalized');
+      },'confirmed');
     }\n`;
     if(this.keypairs.length){
       preamble = this.keypairs.reduce((preamble, key)=>{
@@ -313,6 +400,7 @@ class ToolboxManager {
           type: "input_dummy",
         });
         jsonDef.message0 += "Accounts:%" + jsonDef.args0.length + "\n";
+        instruction.accounts = instruction.accounts.filter((acc)=>!("pda" in acc))
         instruction.accounts.map((account) => {
           if (!isIdlAccounts(account)) {
             jsonDef.args0.push({
@@ -345,7 +433,8 @@ class ToolboxManager {
             generator.valueToCode(block, arg.name, Order.MEMBER)
           );
           var accounts = instruction.accounts.reduce(
-            (obj, acc) =>
+            (obj, acc: IdlAccountItem) =>
+
               `${obj}\n${acc.name}: ${generator.valueToCode(
                 block,
                 acc.name,
@@ -371,7 +460,9 @@ class ToolboxManager {
           var signers_code = signers.reduce((obj: string, signer: any) => {
             return signer ? `${obj}${"keypair_" + signer},` : obj;
           }, "");
-          var code = `await program_${program.idl.name}.methods.${
+          var code = `await provider.sendAndConfirm(
+            new anchor.web3.Transaction().add(
+              await program_${program.idl.name}.methods.${
             instruction.name
           }(${args})\n.accounts({${accounts.substring(
             0,
@@ -379,7 +470,8 @@ class ToolboxManager {
           )}\n})\n.signers([${signers_code.substring(
             0,
             signers_code.length - 1
-          )}]).rpc();\n\n`;
+          )}]).rpc()
+          ), undefined, { commitment: "confirmed" });\n\n`;
           return code;
         };
         this.instructions.push(
@@ -446,7 +538,7 @@ class ToolboxManager {
         this.setInputsInline(false);
         this.setOutput(true, null);
         this.setColour(230);
-      },
+      }
     }
     javascriptGenerator.forBlock["field_from_struct"] = function (
       block: Blockly.Block,
@@ -564,6 +656,9 @@ class ToolboxManager {
       },{
         kind: "block",
         type: "get_from_array",
+      },{
+        kind: "block",
+        type: "get_pda",
       })
       customContent.push({
         kind: "category",
