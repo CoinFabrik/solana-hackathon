@@ -59,7 +59,7 @@ const KeyManipulator = () => {
           {keyManager?.keys?.length ? (
             keyManager?.keys.map((key, index) => (
               <div key={key.name} className="flex justify-between my-2">
-                <span>{key.name}</span>
+              <span>{key.name} ({key.keypair.publicKey.toBase58()})</span>
                 <Button variant="link" onClick={() => handleRemove(key.name)}>
                   <X className="h-4 w-4" />
                 </Button>

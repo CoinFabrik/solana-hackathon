@@ -30,6 +30,11 @@ class AccountsManager {
     if (typeof window !== 'undefined')
       localStorage.setItem("AccountsManager", JSON.stringify(arr));
   }
+  clear() {
+    this.setList([])
+    if (typeof window !== 'undefined')
+      localStorage.setItem("AccountsManager", JSON.stringify([]));
+  }
 }
 
 const AccountsManagerContext = createContext({} as AccountsManager);

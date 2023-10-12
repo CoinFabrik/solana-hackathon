@@ -40,6 +40,11 @@ class KeyManager {
     if (typeof window !== 'undefined')
       localStorage.setItem("KeyManager", JSON.stringify(arr, (key, value)=>key==="keypair"?value.secretKey.toString():value))
   }
+  clear() {
+    this.setList([])
+    if (typeof window !== 'undefined')
+      localStorage.setItem("KeyManager", JSON.stringify([]));
+  }
 }
 
 const KeyManagerContext = createContext({} as KeyManager);

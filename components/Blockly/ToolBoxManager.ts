@@ -184,10 +184,21 @@ class ToolboxManager {
     };
   }
   generatePreamble() {
-    let preamble = "";
+    let preamble = `async function requestAirdrop(wallet_pubkey){
+      const signature = await connection.requestAirdrop(
+        wallet_pubkey,
+        1e9
+      );
+      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
+      await connection.confirmTransaction({
+          blockhash,
+          lastValidBlockHeight,
+          signature
+      },'finalized');
+    }\n`;
     if(this.keypairs.length){
       preamble = this.keypairs.reduce((preamble, key)=>{
-        return preamble+`const keypair_${key.name} = anchor.web3.Keypair.generate();\n`
+        return preamble+`const keypair_${key.name} = anchor.web3.Keypair.generate();\nawait requestAirdrop(keypair_${key.name}.publicKey);\n`
       }, preamble)
     }
     if(this.accounts.length){
@@ -204,255 +215,249 @@ class ToolboxManager {
   }
   setSigners(signers: Array<KeypairName>) {
     this.keypairs = [...signers];
-    if (this.keypairs.length) {
-      this.workspaceRef.current.updateToolbox(this.generateToolbox());
-    }
+    this.workspaceRef.current.updateToolbox(this.generateToolbox());
   }
   setAccounts(accounts: Array<AccountName>) {
     this.accounts = [...accounts];
-    if (this.accounts.length) {
-      this.workspaceRef.current.updateToolbox(this.generateToolbox());
-    }
+    this.workspaceRef.current.updateToolbox(this.generateToolbox());
   }
   setPrograms(programs: Array<ProgramWAddress>) {
     this.programs = [...programs];
     this.enumTypes = [];
-    if (this.programs.length) {
-      programs.map((program) => {
-        program.idl.types
-          ?.filter((type: IdlTypeDef) => {
-            return type.type.kind == "enum";
-          })
-          .map((type: any) => {
-            this.enumTypes.push([
-              type.name,
-              type.type.variants.map((variant: IdlEnumVariant) => {
-                return variant.name;
+    programs.map((program) => {
+      program.idl.types
+        ?.filter((type: IdlTypeDef) => {
+          return type.type.kind == "enum";
+        })
+        .map((type: any) => {
+          this.enumTypes.push([
+            type.name,
+            type.type.variants.map((variant: IdlEnumVariant) => {
+              return variant.name;
+            }),
+          ]);
+        });
+    });
+    let enumtypes = this.enumTypes;
+    this.enumTypes.map((enumType, i) => {
+      Blockly.Blocks["input_" + enumType[0]] = {
+        init: function () {
+          this.appendDummyInput()
+            .appendField(enumType[0])
+            .appendField(
+              new Blockly.FieldDropdown(() => {
+                return enumtypes[i][1].map((val: string, i: number) => [
+                  val,
+                  i.toString(),
+                ]);
               }),
-            ]);
-          });
-      });
-      let enumtypes = this.enumTypes;
-      this.enumTypes.map((enumType, i) => {
-        Blockly.Blocks["input_" + enumType[0]] = {
+              "enum_value"
+            );
+          this.setInputsInline(true);
+          this.setOutput(true, "String");
+          this.setStyle("enum_block");
+          this.setTooltip("");
+          this.setHelpUrl("");
+        },
+      };
+      javascriptGenerator.forBlock["input_" + enumType[0]] = function (
+        block: Blockly.Block,
+        generator: any
+      ) {
+        var dropdown_options = block.getFieldValue("enum_value");
+        var code = enumType[0] + "_enum_value:" + dropdown_options;
+        return [code, javascript.Order.MEMBER];
+      };
+    });
+    this.instructions = [];
+    this.accountTypes = [];
+    programs.map((program) => {
+      console.log("program idl", program.idl);
+      program.idl.instructions.map((instruction) => {
+        let jsonDef = {
+          type: "block_type",
+          message0: instruction.name + "%1\nArguments:%2\n",
+          args0: [
+            {
+              type: "input_dummy",
+            },
+            {
+              type: "input_dummy",
+            },
+          ] as any[],
+          previousStatement: null,
+          nextStatement: null,
+          colour: 230,
+          tooltip: "",
+          helpUrl: "",
+        };
+        instruction.args.map((arg: IdlField) => {
+          if (numberTypesSet.has(arg.type.toString())) {
+            jsonDef.args0.push(
+              this.generateNumberField(arg.type.toString(), arg.name),
+              {
+                type: "input_dummy",
+              },
+            );
+            jsonDef.message0 += arg.name + "%" + (jsonDef.args0.length-1) + "%" + jsonDef.args0.length;
+          } else {
+            jsonDef.args0.push({
+              type: "input_value",
+              name: arg.name,
+              //aca hay que hacer un check con el tipo que deberia tener
+            });
+            jsonDef.message0 += arg.name + "%" + jsonDef.args0.length;
+          }
+        });
+        jsonDef.args0.push({
+          type: "input_dummy",
+        });
+        jsonDef.message0 += "Accounts:%" + jsonDef.args0.length + "\n";
+        instruction.accounts.map((account) => {
+          if (!isIdlAccounts(account)) {
+            jsonDef.args0.push({
+              type: "input_value",
+              name: account.name,
+              check: account.isSigner ? "Signer" : ["Signer","Account"],
+            });
+            jsonDef.message0 += account.name + "%" + jsonDef.args0.length;
+          }
+        });
+        jsonDef.args0.push({
+          type: "input_value",
+          name: "TX_SIGNER",
+          check: "Signer",
+        });
+        jsonDef.message0 += "Transaction signer %" + jsonDef.args0.length;
+        Blockly.Blocks[
+          "program_" + program.idl.name + "_" + instruction.name
+        ] = {
           init: function () {
-            this.appendDummyInput()
-              .appendField(enumType[0])
-              .appendField(
-                new Blockly.FieldDropdown(() => {
-                  return enumtypes[i][1].map((val: string, i: number) => [
-                    val,
-                    i.toString(),
-                  ]);
-                }),
-                "enum_value"
-              );
-            this.setInputsInline(true);
-            this.setOutput(true, "String");
-            this.setStyle("enum_block");
+            this.jsonInit(jsonDef);
+            this.setInputsInline(false);
+            this.setStyle("instruction_blocks");
+          },
+        };
+        javascriptGenerator.forBlock[
+          "program_" + program.idl.name + "_" + instruction.name
+        ] = function (block: Blockly.Block, generator: any) {
+          var args = instruction.args.map((arg) =>
+            generator.valueToCode(block, arg.name, Order.MEMBER)
+          );
+          var accounts = instruction.accounts.reduce(
+            (obj, acc) =>
+              `${obj}\n${acc.name}: ${generator.valueToCode(
+                block,
+                acc.name,
+                Order.MEMBER
+              )},`,
+            ""
+          );
+          console.log("instruction.accounts", instruction.accounts);
+          const signers = (
+            instruction.accounts.filter(
+              (acc: IdlAccountItem) => "isSigner" in acc && acc["isSigner"]
+            ) as IdlAccount[]
+          ).map(
+            (acc: IdlAccount) =>
+              block.getInputTargetBlock(acc.name)?.getFieldValue("signer")
+          );
+          const tx_signer = block
+            .getInputTargetBlock("TX_SIGNER")
+            ?.getFieldValue("signer");
+          if (tx_signer && !signers.includes(tx_signer)) {
+            signers.push(tx_signer);
+          }
+          var signers_code = signers.reduce((obj: string, signer: any) => {
+            return signer ? `${obj}${"keypair_" + signer},` : obj;
+          }, "");
+          var code = `await program_${program.idl.name}.methods.${
+            instruction.name
+          }(${args})\n.accounts({${accounts.substring(
+            0,
+            accounts.length - 1
+          )}\n})\n.signers([${signers_code.substring(
+            0,
+            signers_code.length - 1
+          )}]).rpc();\n\n`;
+          return code;
+        };
+        this.instructions.push(
+          `program_${program.idl.name}_${instruction.name}`
+        );
+      });
+      program.idl.accounts?.map((account) => {
+        Blockly.Blocks[`get_${program.idl.name}_${account.name}`] = {
+          init: function () {
+            this.data = JSON.stringify({
+              fields: account.type.fields,
+              idl: program.idl
+            })
+            this.appendValueInput("ADDRESS").appendField(
+              `get ${program.idl.name} ${account.name}`
+            );
+            this.setInputsInline(false);
+            console.log("`${program.idl.name}_${account.name}`", `${program.idl.name}_${account.name}`)
+            this.setOutput(true, `${program.idl.name}_${account.name}`);
+            this.setStyle("get_account");
             this.setTooltip("");
             this.setHelpUrl("");
           },
         };
-        javascriptGenerator.forBlock["input_" + enumType[0]] = function (
-          block: Blockly.Block,
-          generator: any
-        ) {
-          var dropdown_options = block.getFieldValue("enum_value");
-          var code = enumType[0] + "_enum_value:" + dropdown_options;
+        this.accountTypes.push(`get_${program.idl.name}_${account.name}`);
+        javascriptGenerator.forBlock[
+          `get_${program.idl.name}_${account.name}`
+        ] = function (block: Blockly.Block, generator: any) {
+          var address = generator.valueToCode(block, "ADDRESS", Order.MEMBER);
+          var code = `await program_${program.idl.name}.account.${account.name.toLowerCase()}.fetch(${address})`;
           return [code, javascript.Order.MEMBER];
         };
       });
-      this.instructions = [];
-      programs.map((program) => {
-        console.log("program idl", program.idl);
-        program.idl.instructions.map((instruction) => {
-          let jsonDef = {
-            type: "block_type",
-            message0: instruction.name + "%1\nArguments:%2\n",
-            args0: [
-              {
-                type: "input_dummy",
-              },
-              {
-                type: "input_dummy",
-              },
-            ] as any[],
-            previousStatement: null,
-            nextStatement: null,
-            colour: 230,
-            tooltip: "",
-            helpUrl: "",
-          };
-          instruction.args.map((arg: IdlField) => {
-            if (numberTypesSet.has(arg.type.toString())) {
-              jsonDef.args0.push(
-                this.generateNumberField(arg.type.toString(), arg.name),
-                {
-                  type: "input_dummy",
-                },
-              );
-              jsonDef.message0 += arg.name + "%" + (jsonDef.args0.length-1) + "%" + jsonDef.args0.length;
-            } else {
-              jsonDef.args0.push({
-                type: "input_value",
-                name: arg.name,
-                //aca hay que hacer un check con el tipo que deberia tener
-              });
-              jsonDef.message0 += arg.name + "%" + jsonDef.args0.length;
-            }
-          });
-          jsonDef.args0.push({
-            type: "input_dummy",
-          });
-          jsonDef.message0 += "Accounts:%" + jsonDef.args0.length + "\n";
-          instruction.accounts.map((account) => {
-            if (!isIdlAccounts(account)) {
-              jsonDef.args0.push({
-                type: "input_value",
-                name: account.name,
-                check: account.isSigner ? "Signer" : "Account",
-              });
-              jsonDef.message0 += account.name + "%" + jsonDef.args0.length;
-            }
-          });
-          jsonDef.args0.push({
-            type: "input_value",
-            name: "TX_SIGNER",
-            check: "Signer",
-          });
-          jsonDef.message0 += "Transaction signer %" + jsonDef.args0.length;
-          Blockly.Blocks[
-            "program_" + program.idl.name + "_" + instruction.name
-          ] = {
-            init: function () {
-              this.jsonInit(jsonDef);
-              this.setInputsInline(false);
-              this.setStyle("instruction_blocks");
-            },
-          };
-          javascriptGenerator.forBlock[
-            "program_" + program.idl.name + "_" + instruction.name
-          ] = function (block: Blockly.Block, generator: any) {
-            var args = instruction.args.map((arg) =>
-              generator.valueToCode(block, arg.name, Order.MEMBER)
-            );
-            var accounts = instruction.accounts.reduce(
-              (obj, acc) =>
-                `${obj}\n${acc.name}: ${generator.valueToCode(
-                  block,
-                  acc.name,
-                  Order.MEMBER
-                )},`,
-              ""
-            );
-            console.log("instruction.accounts", instruction.accounts);
-            const signers = (
-              instruction.accounts.filter(
-                (acc: IdlAccountItem) => "isSigner" in acc && acc["isSigner"]
-              ) as IdlAccount[]
-            ).map(
-              (acc: IdlAccount) =>
-                block.getInputTargetBlock(acc.name)?.getFieldValue("signer")
-            );
-            const tx_signer = block
-              .getInputTargetBlock("TX_SIGNER")
-              ?.getFieldValue("signer");
-            if (tx_signer && !signers.includes(tx_signer)) {
-              signers.push(tx_signer);
-            }
-            var signers_code = signers.reduce((obj: string, signer: any) => {
-              return signer ? `${obj}${"keypair_" + signer},` : obj;
-            }, "");
-            var code = `await program_${program.idl.name}.methods.${
-              instruction.name
-            }(${args})\n.accounts({${accounts.substring(
-              0,
-              accounts.length - 1
-            )}\n})\n.signers([${signers_code.substring(
-              0,
-              signers_code.length - 1
-            )}]);\n\n`;
-            return code;
-          };
-          this.instructions.push(
-            `program_${program.idl.name}_${instruction.name}`
-          );
-        });
-        this.accountTypes = [];
-        program.idl.accounts?.map((account) => {
-          Blockly.Blocks[`get_${program.idl.name}_${account.name}`] = {
-            init: function () {
-              this.data = JSON.stringify({
-                fields: account.type.fields,
-                idl: program.idl
-              })
-              this.appendValueInput("ADDRESS").appendField(
-                `get ${program.idl.name} ${account.name}`
-              );
-              this.setInputsInline(false);
-              console.log("`${program.idl.name}_${account.name}`", `${program.idl.name}_${account.name}`)
-              this.setOutput(true, `${program.idl.name}_${account.name}`);
-              this.setStyle("get_account");
-              this.setTooltip("");
-              this.setHelpUrl("");
-            },
-          };
-          this.accountTypes.push(`get_${program.idl.name}_${account.name}`);
-          javascriptGenerator.forBlock[
-            `get_${program.idl.name}_${account.name}`
-          ] = function (block: Blockly.Block, generator: any) {
-            var address = generator.valueToCode(block, "ADDRESS", Order.MEMBER);
-            var code = `await program_${program.idl.name}.account.${account.name}.fetch(${address})`;
-            return [code, javascript.Order.MEMBER];
-          };
-        });
-      });
-      const structs = programs.reduce((structs, program)=>{
-        let programStructs = program.idl.accounts?.map((account)=>
-          `${program.idl.name}_${account.name}`
-        )
-        if(programStructs?.length)
-          structs.push(...programStructs)
-        return structs;
-      },[] as any[])
-      console.log("structs", structs)
-      Blockly.Blocks["field_from_struct"] = {
-        init: function() {
-          const thisBlock = this as Block;
-          this.appendValueInput("STRUCT")
-              .setCheck(structs)
-              .appendField("return")
-              .appendField(new Blockly.FieldDropdown(()=>{
-                const jsonData = thisBlock.getInputTargetBlock("STRUCT")?.data;
-                if(jsonData){
-                  const data = JSON.parse(jsonData)
-                  const fields = data?.fields?.map((field: IdlField)=>{
-                    return [field.name, field.name] as MenuOption
-                  })
-                  if(fields) {
-                    return fields;
-                  }
+    });
+    const structs = programs.reduce((structs, program)=>{
+      let programStructs = program.idl.accounts?.map((account)=>
+        `${program.idl.name}_${account.name}`
+      )
+      if(programStructs?.length)
+        structs.push(...programStructs)
+      return structs;
+    },[] as any[])
+    console.log("structs", structs)
+    Blockly.Blocks["field_from_struct"] = {
+      init: function() {
+        const thisBlock = this as Block;
+        this.appendValueInput("STRUCT")
+            .setCheck(structs)
+            .appendField("return")
+            .appendField(new Blockly.FieldDropdown(()=>{
+              const jsonData = thisBlock.getInputTargetBlock("STRUCT")?.data;
+              if(jsonData){
+                const data = JSON.parse(jsonData)
+                const fields = data?.fields?.map((field: IdlField)=>{
+                  return [field.name, field.name] as MenuOption
+                })
+                if(fields) {
+                  return fields;
                 }
-                return [["",""]] as MenuOption[]
-              }), "FIELD_NAME")
-              .appendField("from");
-          this.setInputsInline(false);
-          this.setOutput(true, null);
-          this.setColour(230);
-        },
-      }
-      javascriptGenerator.forBlock["field_from_struct"] = function (
-        block: Blockly.Block,
-        generator: any
-      ) {
-        var struct = generator.valueToCode(block, "STRUCT", Order.ATOMIC);
-        var fieldName = block.getFieldValue("FIELD_NAME");
-        var code = `${struct}.${fieldName}`;
-        return [code, javascript.Order.MEMBER];
-      };
-      this.workspaceRef.current.updateToolbox(this.generateToolbox());
+              }
+              return [["",""]] as MenuOption[]
+            }), "FIELD_NAME")
+            .appendField("from");
+        this.setInputsInline(false);
+        this.setOutput(true, null);
+        this.setColour(230);
+      },
     }
+    javascriptGenerator.forBlock["field_from_struct"] = function (
+      block: Blockly.Block,
+      generator: any
+    ) {
+      var struct = generator.valueToCode(block, "STRUCT", Order.ATOMIC);
+      var fieldName = block.getFieldValue("FIELD_NAME");
+      var code = `${struct}.${fieldName}`;
+      return [code, javascript.Order.MEMBER];
+    };
+    this.workspaceRef.current.updateToolbox(this.generateToolbox());
   }
   private generateNumberField(type: string, name: string) {
     let bits = Number(type.substring(1));

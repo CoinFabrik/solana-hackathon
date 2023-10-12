@@ -28,13 +28,15 @@ const SourceCode = ({ source, ...props }: { source: any }) => {
       (window as any).assert = (bool: boolean, expected: string) => {
         results.push([bool, expected]);
       };
+      let conn = new Connection(
+        programsManager.networkInfo.networks[
+          programsManager.networkInfo.selectedNetwork
+        ].url
+      );
+      (window as any).connection = conn;
       anchor.setProvider(
         new AnchorProvider(
-          new Connection(
-            programsManager.networkInfo.networks[
-              programsManager.networkInfo.selectedNetwork
-            ].url
-          ),
+          conn,
           new VirtualWallet(Keypair.generate()),
           AnchorProvider.defaultOptions()
         )

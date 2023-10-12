@@ -69,6 +69,11 @@ class ProgramsManager {
     this.setList(arr);
     localStorage.setItem("ProgramsManager", JSON.stringify(arr))
   }
+  clear() {
+    this.setList([])
+    if (typeof window !== 'undefined')
+      localStorage.setItem("ProgramsManager", JSON.stringify([]));
+  }
 }
 
 const ProgramsManagerContext = createContext({} as ProgramsManager);

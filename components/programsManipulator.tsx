@@ -32,7 +32,9 @@ const ProgramsManipulator = () => {
     programsManager?.removeProgram(pubkey);
   };
 
-  const { getCollapseProps, getToggleProps, isExpanded } = useCollapse();
+  const { getCollapseProps, getToggleProps, isExpanded } = useCollapse({
+    defaultExpanded: true,
+  });
 
   const handleKeyPress = (e: any) => {
     if (e.key === "Enter" && isPubKeyValid(address)) {
