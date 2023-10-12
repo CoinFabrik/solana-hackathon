@@ -29,6 +29,7 @@
     "react": "latest",
     "react-collapsed": "^4.0.4",
     "react-dom": "latest",
+    "react-toastify": "^9.1.3",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7"
   },
