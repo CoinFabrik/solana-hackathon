@@ -147,6 +147,7 @@ class ToolboxManager {
         this.setTooltip("");
         this.setHelpUrl("");
         this.setPreviousStatement(true);
+        this.setNextStatement(true);
         this.setInputsInline(true);
       },
     };
@@ -276,12 +277,7 @@ class ToolboxManager {
         wallet_pubkey,
         1e9
       );
-      const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash();
-      await connection.confirmTransaction({
-          blockhash,
-          lastValidBlockHeight,
-          signature
-      },'confirmed');
+      await connection.confirmTransaction(signature, "finalized");
     }\n`;
     if(this.keypairs.length){
       preamble = this.keypairs.reduce((preamble, key)=>{
@@ -460,9 +456,7 @@ class ToolboxManager {
           var signers_code = signers.reduce((obj: string, signer: any) => {
             return signer ? `${obj}${"keypair_" + signer},` : obj;
           }, "");
-          var code = `await provider.sendAndConfirm(
-            new anchor.web3.Transaction().add(
-              await program_${program.idl.name}.methods.${
+          var code = `await program_${program.idl.name}.methods.${
             instruction.name
           }(${args})\n.accounts({${accounts.substring(
             0,
@@ -470,8 +464,7 @@ class ToolboxManager {
           )}\n})\n.signers([${signers_code.substring(
             0,
             signers_code.length - 1
-          )}]).rpc()
-          ), undefined, { commitment: "confirmed" });\n\n`;
+          )}]).rpc({commitment:"finalized"});\n\n`;
           return code;
         };
         this.instructions.push(

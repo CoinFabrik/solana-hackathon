@@ -30,6 +30,7 @@ const SourceCode = ({ source, ...props }: { source: any }) => {
         tests.push([desc, fun]);
       };
       (window as any).assert = (bool: boolean, expected: string) => {
+        console.log("Assert", [bool, expected]);
         results.push([bool, expected]);
       };
       let conn = new Connection(
