@@ -24,6 +24,7 @@ import { ProgramsManagerContext } from "@/services/programLoader";
 import { AccountsManagerContext } from "@/services/accountsManager";
 import { KeyManagerContext } from "@/services/keysManager";
 
+import BasicModal from "@/components/instructions";
 const Split = dynamic(
   () => import("@geoffcox/react-splitter").then((f) => f.Split),
   { ssr: false }
@@ -49,8 +50,10 @@ const MainComponent = () => {
                 <span className="font-bold text-3xl	tracking-widest text-zinc-50 font-mono	">
                   SOLBricks
                 </span>
-
-                <RunAndResetButtons sourceCode = {sourceCode} />
+                <span className="font-bold text-3xl	tracking-widest text-zinc-50 font-mono	">
+                  <BasicModal />
+                </span>
+                <RunAndResetButtons sourceCode={sourceCode} />
                 {/* sidebar visibility toggle */}
               </div>
 

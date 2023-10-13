@@ -10,7 +10,10 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.28.1-beta.2",
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
     "@geoffcox/react-splitter": "^2.1.2",
+    "@mui/material": "^5.14.13",
     "@radix-ui/react-aspect-ratio": "^1.0.3",
     "@radix-ui/react-dropdown-menu": "^2.0.6",
     "@radix-ui/react-navigation-menu": "^1.1.4",
