@@ -22,10 +22,11 @@ const RunAndResetButtons = ({ sourceCode }: { sourceCode: any }) => {
   };
 
   const [keyPair, setKeypair] = useState(null as any);
-  if(keyPair == null){
+  if (keyPair == null) {
     setKeypair(Keypair.generate());
   }
   const runCode = async () => {
+    toast.info("Running tests... This could take a while.");
     if (typeof window !== "undefined") {
       let tests: Array<[string, Function]> = [];
       let results: Array<[boolean, string]> = [];
