@@ -22,31 +22,33 @@ const SideBar = () => {
   };
   return (
     <>
-      <div className="w-full max-w-md mx-auto">
-        <div className="grid gap-4">
-          <DropdownMenu>
-            <DropdownMenuTrigger className="w-full p-2 networkSelector text-white rounded-md z">
-              Select network:{" "}
-              {
-                programsManager?.networkInfo.networks[
-                  programsManager?.networkInfo.selectedNetwork
-                ].name
-              }
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              {programsManager?.networkInfo.networks.map((network, id) => (
-                <DropdownMenuItem key={id} onSelect={() => handleChange(id)}>
-                  {network.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+      <div className="overflow-auto h-full">
+        <div className="w-full max-w-md mx-auto">
+          <div className="grid gap-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="w-full p-2 networkSelector text-white rounded-md z">
+                ↓ Select network:{" "}
+                {
+                  programsManager?.networkInfo.networks[
+                    programsManager?.networkInfo.selectedNetwork
+                  ].name
+                }
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                {programsManager?.networkInfo.networks.map((network, id) => (
+                  <DropdownMenuItem key={id} onSelect={() => handleChange(id)}>
+                    {network.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <AccountManipulator />
+          <KeyManipulator />
+          <ProgramsManipulator />
+          <ClearLocalStorageAndReload />
         </div>
       </div>
-      <AccountManipulator />
-      <KeyManipulator />
-      <ProgramsManipulator />
-      <ClearLocalStorageAndReload />
     </>
   );
 };

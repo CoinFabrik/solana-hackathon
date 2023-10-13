@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import BlocklyComponent from "@/components/Blockly/BlocklyComponent";
 //import { Split } from "@geoffcox/react-splitter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,20 +10,34 @@ import { KeyManagerProvider } from "@/services/keysManager";
 import { ProgramsManagerProvider } from "@/services/programLoader";
 import toolbox from "@/components/Blockly/defaultToolbox.json";
 import dynamic from "next/dynamic";
+import RunAndResetButtons from "../components/clearstorage";
+import * as anchor from "@coral-xyz/anchor";
+
+import * as web3 from "@solana/web3.js";
+import { Connection, Keypair } from "@solana/web3.js";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import VirtualWallet from "@/services/virtualWallet";
+import { ToastContainer, toast } from "react-toastify";
+import { Button } from "@/components/ui/button";
+
+import { ProgramsManagerContext } from "@/services/programLoader";
+import { AccountsManagerContext } from "@/services/accountsManager";
+import { KeyManagerContext } from "@/services/keysManager";
 
 const Split = dynamic(
-  () => import("@geoffcox/react-splitter").then((f)=>f.Split),
+  () => import("@geoffcox/react-splitter").then((f) => f.Split),
   { ssr: false }
-)
+);
 const MainComponent = () => {
   const [size, setSize] = useState("");
   const [sourceCode, setSourceCode] = useState("");
   const layoutCSS = {
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
+
   return (
     <AccountsManagerProvider>
       <KeyManagerProvider>
@@ -31,14 +45,16 @@ const MainComponent = () => {
           <main>
             <div className="h-screen flex flex-col">
               {/* navbar */}
-              <div
-                className="flex-initial flex justify-between items-center border-b p-4 navbar"
-              >
-                <span className="font-bold text-3xl	tracking-widest">SOLBricks</span>
+              <div className="flex-initial flex justify-between items-center border-b p-4 navbar">
+                <span className="font-bold text-3xl	tracking-widest text-zinc-50 font-mono	">
+                  SOLBricks
+                </span>
+
+                <RunAndResetButtons sourceCode = {sourceCode} />
                 {/* sidebar visibility toggle */}
               </div>
-              
-              <Split initialPrimarySize="70%" onSplitChanged={setSize} >
+
+              <Split initialPrimarySize="70%" onSplitChanged={setSize}>
                 <BlocklyComponent
                   readOnly={false}
                   trashcan={true}
