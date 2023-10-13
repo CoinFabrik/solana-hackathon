@@ -46,7 +46,6 @@ const SideBar = () => {
           <AccountManipulator />
           <KeyManipulator />
           <ProgramsManipulator />
-          <ClearLocalStorageAndReload />
         </div>
       </div>
     </>
