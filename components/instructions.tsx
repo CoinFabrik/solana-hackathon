@@ -23,7 +23,13 @@ export default function BasicModal() {
 
   return (
     <div>
-      <Button onClick={handleOpen} className="text-zinc-50 text-lg">
+      <Button
+        onClick={handleOpen}
+        sx={{
+          color: "white",
+          fontSize: "1.5rem",
+        }}
+      >
         Instructions
       </Button>
       <Modal
