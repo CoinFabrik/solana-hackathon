@@ -22,7 +22,9 @@ const RunAndResetButtons = ({ sourceCode }: { sourceCode: any }) => {
   };
 
   const [keyPair, setKeypair] = useState(null as any);
-
+  if(keyPair == null){
+    setKeypair(Keypair.generate());
+  }
   const runCode = async () => {
     if (typeof window !== "undefined") {
       let tests: Array<[string, Function]> = [];

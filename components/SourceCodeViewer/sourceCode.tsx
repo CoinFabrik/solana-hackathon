@@ -82,7 +82,6 @@ const SourceCode = ({ source, ...props }: { source: any }) => {
           ></code>
         </pre>
       </div>
-      <Button onClick={runCode}>RUN</Button>
       <ToastContainer />
     </>
   );
