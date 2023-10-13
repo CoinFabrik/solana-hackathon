@@ -41,7 +41,7 @@ const categoryStyles = {
 };
 
 const componentStyles = {
-  workspaceBackgroundColour: "#CeCeCe", // <----
+  workspaceBackgroundColour: "#DeDeDe", // <----
   toolboxBackgroundColour: "#8e8e8e",
   flyoutBackgroundColour: "#8e8e8e",
   flyoutOpacity: 1,
